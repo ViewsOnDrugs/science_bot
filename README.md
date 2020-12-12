@@ -4,8 +4,8 @@
 
 Built on top of @peterdalle's [Twitterbot](https://github.com/peterdalle/twitterbot), uses `tweepy` instead of `twython` and adds further functionality: 
 
-* Reads and parses a list of RSS feeds. Tweets an article's title and link to a Twitter account.
-* Retweets previous RSS post after a given time. 
+* Reads and parses a list of RSS feeds. Tweets an article's title and link.
+* Retweets last RSS post after a given time. 
 * Retweets the second most up-voted and retweeted posts from:
 * * a globall search for specified keywords or hashtags.
 * * a given distribution twitter list.
@@ -59,7 +59,7 @@ $ python d_what_a_c.py rto
 
 [Here](https://schedule.readthedocs.io/en/stable/) you can learn how set up tasks for the the `scheduled_job()` function
 
-There are some nice free cloud solutions such as [pythonanywhere](https://www.pythonanywhere.com/), where you can deploy the bot
+There are some nice free cloud solutions such as [pythonanywhere](https://www.pythonanywhere.com/), where you can deploy the bot,
 to do that just run:
 
 ```bash
