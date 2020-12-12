@@ -23,7 +23,7 @@ All functions can be used independently.
 - `pip install schedule`
 2. Create a [Twitter application](https://apps.twitter.com/), and generate keys, tokens etc.
 3. Modifiy the settings in the source code.
-- Modify `feed_urls` list to add the RSS feeds of your choice. see some [examples](https://github.com/roblanf/phypapers) on how to ser an RSS search.
+- Modify `feed_urls` list to add the RSS feeds of your choice. [Here](https://github.com/roblanf/phypapers) you can find a description on how to set an RSS search.
 - Modify the variables in the `access.py` file and add keys, tokens etc. for connecting to your Twitter app.
 - Modify `retweet_include_words` for keywords you want to search and retweet, and `retweet_exclude_words` for keywords you would like to exclude from retweeting. For example `retweet_include_words = ["foo"]` and `retweet_exclude_words = ["bar"]` will include any tweet with the word "foo", as long as the word "bar" is absent. This list can also be left empty, i.e. `retweet_exclude_words = []`.
 - Modify or add jobs to the `scheduled_job()` function.
