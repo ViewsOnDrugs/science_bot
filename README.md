@@ -5,11 +5,11 @@
 Built on top of @peterdalle's [Twitterbot](https://github.com/peterdalle/twitterbot), uses `tweepy` instead of `twython` and adds further functionality: 
 
 * Reads and parses a list of RSS feeds. Tweets an article's title and link to a Twitter account.
-* * retweets previous RSS post after a given time. 
+* Retweets previous RSS post after a given time. 
 * Retweets the second most up-voted and retweeted posts from:
 * * a globall search for specified keywords or hashtags.
 * * a given distribution twitter list.
-* Schedule jobs for any of the above 
+* Schedule jobs for any of the above. 
 
 All functions can be used independently.
 
