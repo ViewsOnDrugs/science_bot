@@ -81,7 +81,7 @@ class Settings:
     "regulatestimulants", "safeconsumption","harmreduction","druguse", "decriminalize", "safersuply"]
 
     # Do not include tweets with these words when retweeting.
-    retweet_exclude_words = ["sex", "sex work", "sex work"]
+    retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork"]
 
 
 def compose_message(item: feedparser.FeedParserDict) -> str:
