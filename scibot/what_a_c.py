@@ -3,10 +3,36 @@ import feedparser
 import os, string
 import sys
 import tweepy, time
-from access import *  ## change `priv_access` to `access` with your API tokens
 import schedule
 import time
 import re
+from os.path import expanduser
+from dotenv import load_dotenv
+
+env_path = expanduser('~/.env')
+load_dotenv(dotenv_path=env_path)
+
+def main():
+    if len(sys.argv) > 1:
+        if sys.argv[1].lower() == "rss":
+            read_rss_and_tweet(url=Settings.combined_feed)
+        elif sys.argv[1].lower() == "rtg":
+            search_and_retweet('global_search')
+        elif sys.argv[1].lower() == "rtl":
+            search_and_retweet('list_search')
+        elif sys.argv[1].lower() == "rto":
+            retweet_own()
+        elif sys.argv[1].lower() == "sch":
+            while True:
+                try:
+                    scheduled_job()
+                except:
+                    print("something failed, will restart" )
+                    pass
+        else:
+            display_help()
+    else:
+        display_help()
 
 add_hashtag = ['psilocybin', 'psilocybine' , 'psychedelic','psychological','hallucinogenic'
                'trip', 'therapy', 'psychiatry','dmt','mentalhealth','alzheimer','depression','axiety',
@@ -24,8 +50,8 @@ IGNORE_ERRORS = [327]
 # Setup API:
 def twitter_setup():
     # Authenticate and access using keys:
-    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
+    auth = tweepy.OAuthHandler(os.getenv('CONSUMER_KEY'), os.getenv('CONSUMER_SECRET'))
+    auth.set_access_token(os.getenv('ACCESS_TOKEN'), os.getenv('ACCESS_SECRET'))
 
     # Return API access:
     api = tweepy.API(auth)
@@ -335,19 +361,4 @@ def display_help():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        if sys.argv[1].lower() == "rss":
-            read_rss_and_tweet(url=Settings.combined_feed)
-        elif sys.argv[1].lower() == "rtg":
-            search_and_retweet('global_search')
-        elif sys.argv[1].lower() == "rtl":
-            search_and_retweet('list_search')
-        elif sys.argv[1].lower() == "rto":
-            retweet_own()
-        elif sys.argv[1].lower() == "sch":
-            print("Welcome to the infinite loop" )
-            scheduled_job()
-        else:
-            display_help()
-    else:
-        display_help()
+    main()
