@@ -6,11 +6,27 @@ import tweepy, time
 import schedule
 import time
 import re
+import logging
+import logging.handlers
 from os.path import expanduser
 from dotenv import load_dotenv
 
 env_path = expanduser('~/.env')
 load_dotenv(dotenv_path=env_path)
+
+logger = logging.getLogger()
+logger.addHandler(logging.handlers.SMTPHandler(mailhost=(os.getenv('GHOST'), os.getenv('PORT')),
+                                            fromaddr=os.getenv('GUSERNAME'),
+                                            toaddrs=os.getenv('RECEIVER'),
+                                            subject=u"Script error!",
+                                            credentials=(os.getenv('GUSERNAME'),
+                                            os.getenv('GMAIL_PASS')),
+                                            secure=())),
+
+
+
+
+
 
 def main():
     if len(sys.argv) > 1:
@@ -23,12 +39,12 @@ def main():
         elif sys.argv[1].lower() == "rto":
             retweet_own()
         elif sys.argv[1].lower() == "sch":
-            while True:
-                try:
-                    scheduled_job()
-                except:
-                    print("something failed, will restart" )
-                    pass
+            try:
+                scheduled_job()
+            except Exception as e:
+              logger.exception('Unhandled Exception')
+              pass
+
         else:
             display_help()
     else:
