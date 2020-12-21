@@ -39,11 +39,11 @@ def main():
         elif sys.argv[1].lower() == "rto":
             retweet_own()
         elif sys.argv[1].lower() == "sch":
-            try:
-                scheduled_job()
-            except Exception as e:
-              logger.exception('Unhandled Exception')
-              pass
+            # try:
+            scheduled_job()
+            # except Exception as e:
+            #   logger.exception('Unhandled Exception')
+            #   pass
 
         else:
             display_help()
