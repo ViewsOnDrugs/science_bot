@@ -1,14 +1,14 @@
  #  Bot, what a concept!
 
- # :cactus:
+ ## :cactus:
 
 Built on top of @peterdalle's [Twitterbot](https://github.com/peterdalle/twitterbot), uses `tweepy` instead of `twython` and adds further functionality:
 
 * Reads and parses a list of RSS feeds. Tweets an article's title and link.
 * Retweets last RSS post after a given time.
 * Retweets the second most up-voted and retweeted posts from:
-* * a globall search for specified keywords or hashtags.
-* * a given distribution twitter list.
+** a globall search for specified keywords or hashtags.
+** a given distribution twitter list.
 * Schedule jobs for any of the above.
 
 All functions can be used independently.
@@ -28,7 +28,7 @@ All functions can be used independently.
 
 ## Requirements
 * Python 3+
-* * Twitter account
+* Twitter account
 
 ## Usage
 
