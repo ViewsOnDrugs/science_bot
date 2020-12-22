@@ -24,10 +24,6 @@ logger.addHandler(logging.handlers.SMTPHandler(mailhost=(os.getenv('GHOST'), os.
                                             secure=())),
 
 
-
-
-
-
 def main():
     if len(sys.argv) > 1:
         if sys.argv[1].lower() == "rss":
@@ -39,11 +35,9 @@ def main():
         elif sys.argv[1].lower() == "rto":
             retweet_own()
         elif sys.argv[1].lower() == "sch":
-            # try:
+
             scheduled_job()
-            # except Exception as e:
-            #   logger.exception('Unhandled Exception')
-            #   pass
+
 
         else:
             display_help()
@@ -54,7 +48,7 @@ add_hashtag = ['psilocybin', 'psilocybine' , 'psychedelic','psychological','hall
                'trip', 'therapy', 'psychiatry','dmt','mentalhealth','alzheimer','depression','axiety',
                'dopamine', 'serotonin', 'lsd', 'drug-policy','drugspolicy','drugpolicy', 'mdma',
                'microdosing', 'drug', 'ayahuasca', 'psychopharmacology', 'clinical trial',
-               'neurogenesis','serotonergic',
+               'neurogenesis','serotonergic','ketamine',
                'consciousness', 'psychotherapy','meta-analysis']
 
 ## list of the distribution
@@ -152,6 +146,7 @@ def post_tweet(message: str):
     """
     try:
         twitter_api = twitter_setup()
+        # print('post_tweet():', message)
         twitter_api.update_status(status=message)
     except tweepy.TweepError as e:
         print(e)
@@ -175,8 +170,9 @@ def read_rss_and_tweet(url: str):
                 link_id = item.id
 
                 if not is_in_logfile(link_id, Settings.posted_urls_output_file):
+                    print(item)
                     post_tweet(message=compose_message(item))
-                    write_to_logfile(link_id, Settings.posted_urls_output_file)
+                    write_to_logfile(f"{link_id}", Settings.posted_urls_output_file)
                     print("Posted:", link_id, compose_message(item))
                     break
                 else:
@@ -211,7 +207,7 @@ def try_retweet(twitter_api, tweet_text, tweet_id):
             twitter_api.retweet(id=tweet_id)
             write_to_logfile(
                 tweet_id, Settings.posted_retweets_output_file)
-            print("Retweeted {} (id {})".format(shorten_text(
+            print("try_retweet(): Retweeted {} (id {})".format(shorten_text(
                 tweet_text, maxlength=140), tweet_id))
             return True
         except tweepy.TweepError as e:
@@ -223,6 +219,20 @@ def try_retweet(twitter_api, tweet_text, tweet_id):
     else:
         print("Already retweeted {} (id {})".format(
             shorten_text(tweet_text, maxlength=140), tweet_id))
+
+def filter_tweet(status, twitter_api):
+    """
+    function to ensure that retweets are on-topic
+    by the hashtag list
+    """
+
+    if status.is_quote_status:
+        quoted_tweet=twitter_api.get_status(status.quoted_status_id_str, tweet_mode="extended")
+        end_status= status.full_text+quoted_tweet.full_text
+    else:
+        end_status= status.full_text
+    if [x for x in add_hashtag if x in end_status.lower()]:
+        return (status.retweet_count + status.favorite_count, status.id_str, status.full_text)
 
 
 def search_and_retweet(flag='global_search', count=10):
@@ -241,33 +251,35 @@ def search_and_retweet(flag='global_search', count=10):
         twitter_api = twitter_setup()
         if flag == 'global_search':
             ## search results retweets globally forgiven keywords
-            search_results = twitter_api.search(q=get_query(), count=count)  ## standard search results
+            search_results = twitter_api.search(q=get_query(), count=count, tweet_mode="extended")  ## standard search results
         else:
             ## search list retwwets most commented ad rt from the experts lists
-            search_results = twitter_api.list_timeline(list_id=mylist_id, count=count)  ## list to tweet from
+            search_results = twitter_api.list_timeline(list_id=mylist_id, count=count, tweet_mode="extended")  ## list to tweet from
 
     except tweepy.TweepError as e:
         print(e.reason)
         return
 
-    # Make sure we don't retweet any dubplicates.
+    # Make sure we don't retweet any duplicates.
     count = 0
     ## get the most faved+ rtweeted and retweet it
-    max_val = sorted(([(x.retweet_count, x.id_str, x.text) for x in search_results]))
+    max_val = sorted(([filter_tweet(x,twitter_api) for x in search_results if filter_tweet(x,twitter_api)]))
 
-    while (True):
-        tweet_id = max_val[-1 - count][1]
-        tweet_text = max_val[-1 - count][2]
-        if try_retweet(twitter_api, tweet_text, tweet_id):
-            break
-        elif count > len(search_results):
-            print('no more tweets to publish')
-            break
-        else:
-            count += 1
-            time.sleep(2)
-            continue
-
+    if max_val:
+        while (True):
+            print(max_val)
+            tweet_id = max_val[-1 - count][1]
+            tweet_text = max_val[-1 - count][2]
+            print(tweet_text)
+            if try_retweet(twitter_api, tweet_text, tweet_id):
+                break
+            elif count > len(search_results) or len(max_val)>2:
+                print('no more tweets to publish')
+                break
+            else:
+                count += 1
+                time.sleep(2)
+                continue
 
 def is_in_logfile(content: str, filename: str) -> bool:
     """Does the content exist on any line in the log file?
