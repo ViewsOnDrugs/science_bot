@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import feedparser
 import os, string
 import sys
@@ -22,9 +23,6 @@ logger.addHandler(logging.handlers.SMTPHandler(mailhost=(os.getenv('GHOST'), os.
                                             os.getenv('GMAIL_PASS')),
                                             secure=()))
 
-
-
-
 def main():
     if len(sys.argv) > 1:
         try:
@@ -43,9 +41,6 @@ def main():
 
         except Exception as e:
             logging.exception(e)
-
-        else:
-            display_help()
     else:
         display_help()
 
@@ -97,7 +92,6 @@ class Settings:
 
     # Do not include tweets with these words when retweeting.
     retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork", "fuck"]
-
 
 def compose_message(item: feedparser.FeedParserDict) -> str:
     """Compose a tweet from an RSS item (title, link, description)
@@ -395,3 +389,4 @@ def display_help():
 
 if __name__ == "__main__":
     main()
+

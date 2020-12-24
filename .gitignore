@@ -1,2 +1,13 @@
 access.py*
 posted-*
+posted
+.env
+*.pyc
+*ipynb
+*.log
+venv/
+scibot/__pycache__/*
+shared_drugsci_friends.csv
+user_friends.json
+.ipynb_checkpoints/
+*.egg-info/
