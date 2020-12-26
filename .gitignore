@@ -5,7 +5,7 @@ posted
 *ipynb
 *.log
 venv/
-./scibot/__pycache__/*
+scibot/__pycache__/
 shared_drugsci_friends.csv
 user_friends.json
 .ipynb_checkpoints/
