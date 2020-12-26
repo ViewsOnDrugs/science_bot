@@ -196,9 +196,36 @@ def get_query() -> str:
     return include + " " + exclude
 
 
+def retweet_from_users(twitter_api,tweet_id):
+
+    """
+    retweet from normal users retweeting something interesting
+    """
+
+    retweets = twitter_api.retweets(tweet_id)
+
+    future_friends=[]
+    for retweet in retweeters:
+        friends= retweet.author.friends_count
+        followers = retweet.author.followers_count
+        follows_friends_ratio= followers/friends
+
+        if friends > followers:
+            future_friends.append((follows_friends_ratio,retweet.id))
+            print(retweet.id,(retweet.author.screen_name, friends, followers),followers/friends)
+        else:
+            pass
+    if future_friends:
+        return min(future_friends)[1]
+    else:
+        return tweet_id
+
+
 def try_retweet(twitter_api, tweet_text, tweet_id):
     '''try to retweet, if already retweeted try next fom the list
     of recent tweets'''
+
+    tweet_id=retweet_from_users(twitter_api,tweet_id)
 
     if not is_in_logfile(
             tweet_id, Settings.posted_retweets_output_file) and len(tweet_text.split()) > 3:
