@@ -208,7 +208,7 @@ def retweet_from_users(twitter_api,tweet_id):
     retweet from normal users retweeting something interesting
     """
 
-    retweets = twitter_api.retweets(tweet_id)
+    retweeters = twitter_api.retweets(tweet_id)
 
     future_friends=[]
     for retweet in retweeters:
@@ -218,7 +218,7 @@ def retweet_from_users(twitter_api,tweet_id):
 
         if friends > followers:
             future_friends.append((follows_friends_ratio,retweet.id))
-            print(retweet.id,(retweet.author.screen_name, friends, followers),followers/friends)
+            print(retweet.id_str,(retweet.author.screen_name, friends, followers),followers/friends)
         else:
             pass
     if future_friends:
@@ -331,7 +331,7 @@ def is_in_logfile(content: str, filename: str) -> bool:
     if os.path.isfile(filename):
         with open(filename) as f:
             lines = f.readlines()
-        if (content + "\n" or content) in lines:
+        if (str(content) + "\n" or content) in lines:
             return True
     return False
 
