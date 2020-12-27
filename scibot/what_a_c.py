@@ -5,23 +5,46 @@ import sys
 import tweepy, time
 import schedule
 import time
+import smtplib, ssl
 import re
 import logging
-import logging.handlers
+from datetime import date
 from os.path import expanduser
 from dotenv import load_dotenv
 
 env_path = expanduser('~/.env')
 load_dotenv(dotenv_path=env_path)
 
-logger = logging.getLogger()
-logger.addHandler(logging.handlers.SMTPHandler(mailhost=(os.getenv('GHOST'), os.getenv('PORT')),
-                                            fromaddr=os.getenv('GUSERNAME'),
-                                            toaddrs=os.getenv('RECEIVER'),
-                                            subject=u"Script error!",
-                                            credentials=(os.getenv('GUSERNAME'),
-                                            os.getenv('GMAIL_PASS')),
-                                            secure=()))
+def send_log_mail(in_message):
+
+    message = f"""Subject: sci_bot failed!
+
+
+{in_message}."""
+    # Create a secure SSL context
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(os.getenv('GHOST'), os.getenv('PORT'), context=context) as server:
+        server.login(os.getenv('GUSERNAME'), os.getenv('GMAIL_PASS'))
+        server.sendmail(os.getenv('GUSERNAME'), os.getenv('RECEIVER'), message)
+
+
+logger = logging.getLogger('bot logger')
+# handler determines where the logs go: stdout/file
+file_handler = logging.FileHandler(f"{date.today()}_scibot.log")
+
+logger.setLevel(logging.DEBUG)
+file_handler.setLevel(logging.DEBUG)
+
+
+fmt_file = (
+    "%(levelname)s %(asctime)s [%(filename)s: %(funcName)s:%(lineno)d] %(message)s"
+)
+
+file_formatter = logging.Formatter(fmt_file)
+
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
+logger.info("logger configured")
 
 def main():
     if len(sys.argv) > 1:
@@ -40,7 +63,8 @@ def main():
                 scheduled_job()
 
         except Exception as e:
-            logging.exception(e)
+            logging.debug(e)
+            send_log_mail(e)
     else:
         display_help()
 
@@ -65,7 +89,7 @@ def twitter_setup():
 
     # Return API access:
     api = tweepy.API(auth)
-    return (api)
+    return api
 
 
 class Settings:
@@ -148,7 +172,7 @@ def post_tweet(message: str):
         # print('post_tweet():', message)
         twitter_api.update_status(status=message)
     except tweepy.TweepError as e:
-        print(e)
+        logger.error(e)
 
 
 def read_rss_and_tweet(url: str):
@@ -172,13 +196,13 @@ def read_rss_and_tweet(url: str):
                     print(item)
                     post_tweet(message=compose_message(item))
                     write_to_logfile(f"{link_id}", Settings.posted_urls_output_file)
-                    print("Posted:", link_id, compose_message(item))
+                    logging.info("Posted:", link_id, compose_message(item))
                     break
                 else:
-                    print(count, "Already posted:", link_id, "Trying next")
+                    logging.info(count, "Already posted:", link_id, "Trying next")
                     count += 1
     else:
-        print("Nothing found in feed", url)
+        logging.info("Nothing found in feed: ", url)
 
 
 def get_query() -> str:
@@ -212,12 +236,14 @@ def retweet_from_users(twitter_api,tweet_id):
 
         if friends > followers:
             future_friends.append((follows_friends_ratio,retweet.id))
-            print(retweet.id_str,(retweet.author.screen_name, friends, followers),followers/friends)
+            logging.info(retweet.id_str,(retweet.author.screen_name, friends, followers),follows_friends_ratio)
         else:
-            pass
+            future_friends.append((followers,retweet.id))
     if future_friends:
+        logging.info('Retweeted from profile: ', min(future_friends))
         return min(future_friends)[1]
     else:
+        logging.info('Retweeted from original post: ' ,tweet_id)
         return tweet_id
 
 
@@ -233,17 +259,17 @@ def try_retweet(twitter_api, tweet_text, tweet_id):
             twitter_api.retweet(id=tweet_id)
             write_to_logfile(
                 tweet_id, Settings.posted_retweets_output_file)
-            print("try_retweet(): Retweeted {} (id {})".format(shorten_text(
+            logging.info("try_retweet(): Retweeted {} (id {})".format(shorten_text(
                 tweet_text, maxlength=140), tweet_id))
             return True
         except tweepy.TweepError as e:
             if e.api_code in IGNORE_ERRORS:
                 return False
             else:
-                print(e)
+                logging.debug(e)
                 return True
     else:
-        print("Already retweeted {} (id {})".format(
+        logging.info("Already retweeted {} (id {})".format(
             shorten_text(tweet_text, maxlength=140), tweet_id))
 
 def filter_tweet(status, twitter_api):
@@ -283,7 +309,7 @@ def search_and_retweet(flag='global_search', count=10):
             search_results = twitter_api.list_timeline(list_id=mylist_id, count=count, tweet_mode="extended")  ## list to tweet from
 
     except tweepy.TweepError as e:
-        print(e.reason)
+        logging.debug(e.reason)
         return
 
     # Make sure we don't retweet any duplicates.
@@ -293,14 +319,15 @@ def search_and_retweet(flag='global_search', count=10):
 
     if max_val:
         while (True):
-            print(max_val)
+            logging.debug(max_val)
             tweet_id = max_val[-1 - count][1]
             tweet_text = max_val[-1 - count][2]
-            print(tweet_text)
+
             if try_retweet(twitter_api, tweet_text, tweet_id):
+                logging.info('retweeted: ', tweet_text)
                 break
             elif count > len(search_results) or len(max_val)>2:
-                print('no more tweets to publish')
+                logging.debug('no more tweets to publish')
                 break
             else:
                 count += 1
@@ -340,15 +367,15 @@ def retweet_own():
             twitter_api = twitter_setup()
             tweet = twitter_api.user_timeline(id=twitter_api, count=10)[count]
             if not tweet.retweeted:
-                twitter_api.retweet(tweet.id_str)
-                print("retweeted: ", tweet.text)
+#                 twitter_api.retweet(tweet.id_str)
+                logging.info("retweeted: ", tweet.text)
                 break
             else:
-                print('already retweeted, trying next')
+                logging.info('already retweeted, trying next')
                 count += 1
 
     except tweepy.TweepError as e:
-        print(e)
+        logging.debug(e)
 
 
 def write_to_logfile(content: str, filename: str):
@@ -365,7 +392,7 @@ def write_to_logfile(content: str, filename: str):
         with open(filename, "a") as f:
             f.write(content + "\n")
     except IOError as e:
-        print(e)
+        logging.debug(e)
 
 
 def scheduled_job():
