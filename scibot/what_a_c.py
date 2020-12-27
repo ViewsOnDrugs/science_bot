@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 import feedparser
-import os, string
+import os
 import sys
-import tweepy, time
+import tweepy
 from schedule import Scheduler
 import time
 import smtplib, ssl
 import re
 import logging
-from datetime import date
+import datetime
 from os.path import expanduser
 from dotenv import load_dotenv
 
-env_path = expanduser('~/.env')
+env_path = expanduser("~/.env")
 load_dotenv(dotenv_path=env_path)
 
 # logging parameters
-logger = logging.getLogger('bot logger')
+logger = logging.getLogger("bot logger")
 # handler determines where the logs go: stdout/file
-file_handler = logging.FileHandler(f"{date.today()}_scibot.log")
+file_handler = logging.FileHandler(f"{datetime.date.today()}_scibot.log")
 
 logger.setLevel(logging.DEBUG)
 file_handler.setLevel(logging.DEBUG)
@@ -33,15 +33,41 @@ logger.addHandler(file_handler)
 logger.info("logger configured")
 
 # main script variables to adapt
-add_hashtag = ['psilocybin', 'psilocybine' , 'psychedelic','psychological','hallucinogenic'
-               'trip', 'therapy', 'psychiatry','dmt','mentalhealth','alzheimer','depression','axiety',
-               'dopamine', 'serotonin', 'lsd', 'drug-policy','drugspolicy','drugpolicy', 'mdma',
-               'microdosing', 'drug', 'ayahuasca', 'psychopharmacology', 'clinical trial',
-               'neurogenesis','serotonergic','ketamine',
-               'consciousness', 'psychotherapy','meta-analysis']
+add_hashtag = [
+    "psilocybin",
+    "psilocybine",
+    "psychedelic",
+    "psychological",
+    "hallucinogenic" "trip",
+    "therapy",
+    "psychiatry",
+    "dmt",
+    "mentalhealth",
+    "alzheimer",
+    "depression",
+    "axiety",
+    "dopamine",
+    "serotonin",
+    "lsd",
+    "drug-policy",
+    "drugspolicy",
+    "drugpolicy",
+    "mdma",
+    "microdosing",
+    "drug",
+    "ayahuasca",
+    "psychopharmacology",
+    "clinical trial",
+    "neurogenesis",
+    "serotonergic",
+    "ketamine",
+    "consciousness",
+    "psychotherapy",
+    "meta-analysis",
+]
 
 ## list of the distribution
-mylist_id = '1306244304000749569'  # todo add covid example
+mylist_id = "1306244304000749569"  # todo add covid example
 ## reosted error to ignore for the log.list
 IGNORE_ERRORS = [327]
 
@@ -52,9 +78,9 @@ def main():
             if sys.argv[1].lower() == "rss":
                 read_rss_and_tweet(url=Settings.combined_feed)
             elif sys.argv[1].lower() == "rtg":
-                search_and_retweet('global_search')
+                search_and_retweet("global_search")
             elif sys.argv[1].lower() == "rtl":
-                search_and_retweet('list_search')
+                search_and_retweet("list_search")
             elif sys.argv[1].lower() == "rto":
                 retweet_own()
             elif sys.argv[1].lower() == "sch":
@@ -76,15 +102,18 @@ def send_log_mail(in_message):
 {in_message}."""
     # Create a secure SSL context
     context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(os.getenv('GHOST'), os.getenv('PORT'), context=context) as server:
-        server.login(os.getenv('GUSERNAME'), os.getenv('GMAIL_PASS'))
-        server.sendmail(os.getenv('GUSERNAME'), os.getenv('RECEIVER'), message)
+    with smtplib.SMTP_SSL(
+        os.getenv("GHOST"), os.getenv("PORT"), context=context
+    ) as server:
+        server.login(os.getenv("GUSERNAME"), os.getenv("GMAIL_PASS"))
+        server.sendmail(os.getenv("GUSERNAME"), os.getenv("RECEIVER"), message)
+
 
 # Setup API:
 def twitter_setup():
     # Authenticate and access using keys:
-    auth = tweepy.OAuthHandler(os.getenv('CONSUMER_KEY'), os.getenv('CONSUMER_SECRET'))
-    auth.set_access_token(os.getenv('ACCESS_TOKEN'), os.getenv('ACCESS_SECRET'))
+    auth = tweepy.OAuthHandler(os.getenv("CONSUMER_KEY"), os.getenv("CONSUMER_SECRET"))
+    auth.set_access_token(os.getenv("ACCESS_TOKEN"), os.getenv("ACCESS_SECRET"))
 
     # Return API access:
     api = tweepy.API(auth)
@@ -96,25 +125,39 @@ class Settings:
 
     Enter the RSS feed you want to tweet, or keywords you want to retweet.
     """
+
     # RSS feeds to read and post tweets from.
     feed_urls = [
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1Di1IZzM0R4FRnKYsI1qINYHDYUiWSVAWo0rd3bhufn34wQ9HU/?limit=100&utm_campaign=pubmed-2&fc=20201028084526",
-        'http://export.arxiv.org/api/query?search_query=all:psilocybin*&start=0&max_results=100&sortBy=lastUpdatedDate&sortOrder=descending',
-        ]
+        "http://export.arxiv.org/api/query?search_query=all:psilocybin*&start=0&max_results=100&sortBy=lastUpdatedDate&sortOrder=descending",
+    ]
     # nested list/dictionary comprehension to parse multiple RSS feeds
-    combined_feed = [feedparser.parse(url) for url in
-                     feed_urls]  # Log file to save all tweeted RSS links (one URL per line).
+    combined_feed = [
+        feedparser.parse(url) for url in feed_urls
+    ]  # Log file to save all tweeted RSS links (one URL per line).
     posted_urls_output_file = "/home/farcila/what_a_c/posted-urls.log"
 
     # Log file to save all retweeted tweets (one tweetid per line).
     posted_retweets_output_file = "/home/farcila/what_a_c/posted-retweets.log"
 
     # Include tweets with these words when retweeting.
-    retweet_include_words = ["drugpolicy","drugspolicy","transformdrugspolicy","transformdrugspolicy", "drugchecking",
-    "regulatestimulants", "safeconsumption","harmreduction","druguse", "decriminalize", "safersuply"]
+    retweet_include_words = [
+        "drugpolicy",
+        "drugspolicy",
+        "transformdrugspolicy",
+        "transformdrugspolicy",
+        "drugchecking",
+        "regulatestimulants",
+        "safeconsumption",
+        "harmreduction",
+        "druguse",
+        "decriminalize",
+        "safersuply",
+    ]
 
     # Do not include tweets with these words when retweeting.
     retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork", "fuck"]
+
 
 class SafeScheduler(Scheduler):
     """
@@ -143,6 +186,10 @@ class SafeScheduler(Scheduler):
             job.last_run = datetime.datetime.now()
             job._schedule_next_run()
 
+
+def insert_hash(string, index):
+    return string[:index] + '#' + string[index:]
+
 def compose_message(item: feedparser.FeedParserDict) -> str:
     """Compose a tweet from an RSS item (title, link, description)
     and return final tweet message.
@@ -157,10 +204,12 @@ def compose_message(item: feedparser.FeedParserDict) -> str:
     str
         Returns a message suited for a Twitter status update.
     """
-    title=item["title"]
+    title = item["title"]
+
     for x in add_hashtag:
-        if re.search(fr'\b{x}', title.lower()):
-            title=(re.sub(fr'\b{x}',f'#{x}', title.lower()))
+        if re.search(fr"\b{x}", title.lower()):
+            pos=(re.search(fr"\b{x}", title.lower())).start()
+            title = insert_hash(title, pos)
     link, _ = item["link"], item["description"]
     message = shorten_text(title, maxlength=250) + " " + link
     return message
@@ -182,7 +231,7 @@ def shorten_text(text: str, maxlength: int) -> str:
     str
         Returns a shortened text string.
     """
-    return (text[:maxlength] + '...') if len(text) > maxlength else text
+    return (text[:maxlength] + "...") if len(text) > maxlength else text
 
 
 def post_tweet(message: str):
@@ -195,7 +244,7 @@ def post_tweet(message: str):
     """
     try:
         twitter_api = twitter_setup()
-        logger.info(f'post_tweet():{message}')
+        logger.info(f"post_tweet():{message}")
         twitter_api.update_status(status=message)
     except tweepy.TweepError as e:
         logger.error(e)
@@ -219,7 +268,6 @@ def read_rss_and_tweet(url: str):
                 link_id = item.id
 
                 if not is_in_logfile(link_id, Settings.posted_urls_output_file):
-                    print(item)
                     post_tweet(message=compose_message(item))
                     write_to_logfile(f"{link_id}", Settings.posted_urls_output_file)
                     logger.info(f"Posted:, {link_id}, {compose_message(item)}")
@@ -246,7 +294,7 @@ def get_query() -> str:
     return include + " " + exclude
 
 
-def retweet_from_users(twitter_api,tweet_id):
+def retweet_from_users(twitter_api, tweet_id):
 
     """
     retweet from normal users retweeting something interesting
@@ -254,39 +302,47 @@ def retweet_from_users(twitter_api,tweet_id):
 
     retweeters = twitter_api.retweets(tweet_id)
 
-    future_friends=[]
+    future_friends = []
     for retweet in retweeters:
-        friends= retweet.author.friends_count
+        friends = retweet.author.friends_count
         followers = retweet.author.followers_count
-        follows_friends_ratio= followers/friends
+        follows_friends_ratio = followers / friends
 
         if friends > followers:
-            future_friends.append((follows_friends_ratio,retweet.id_str))
-            logger.info(retweet.id_str,(retweet.author.screen_name, friends, followers),follows_friends_ratio)
+            future_friends.append((follows_friends_ratio, retweet.id_str))
+            logger.info(
+                retweet.id_str,
+                (retweet.author.screen_name, friends, followers),
+                follows_friends_ratio,
+            )
         else:
-            future_friends.append((followers,retweet.id_str))
+            future_friends.append((followers, retweet.id_str))
     if future_friends:
-        logger.info(f'Retweeting from profile: {min(future_friends)}')
+        logger.info(f"Retweeting from profile: {min(future_friends)}")
         return min(future_friends)[1]
     else:
-        logger.info(f'Retweeting from original post: {tweet_id}')
+        logger.info(f"Retweeting from original post: {tweet_id}")
         return tweet_id
 
 
 def try_retweet(twitter_api, tweet_text, tweet_id):
-    '''try to retweet, if already retweeted try next fom the list
-    of recent tweets'''
+    """try to retweet, if already retweeted try next fom the list
+    of recent tweets"""
 
-    tweet_id=retweet_from_users(twitter_api,tweet_id)
+    tweet_id = retweet_from_users(twitter_api, tweet_id)
 
-    if not is_in_logfile(
-            tweet_id, Settings.posted_retweets_output_file) and len(tweet_text.split()) > 3:
+    if (
+        not is_in_logfile(tweet_id, Settings.posted_retweets_output_file)
+        and len(tweet_text.split()) > 3
+    ):
         try:
             twitter_api.retweet(id=tweet_id)
-            write_to_logfile(
-                tweet_id, Settings.posted_retweets_output_file)
-            logger.info("saved to file and Retweeted {} (id {})".format(shorten_text(
-                tweet_text, maxlength=140), tweet_id))
+            write_to_logfile(tweet_id, Settings.posted_retweets_output_file)
+            logger.info(
+                "saved to file and Retweeted {} (id {})".format(
+                    shorten_text(tweet_text, maxlength=140), tweet_id
+                )
+            )
             return True
         except tweepy.TweepError as e:
             if e.api_code in IGNORE_ERRORS:
@@ -296,8 +352,12 @@ def try_retweet(twitter_api, tweet_text, tweet_id):
                 logger.debug(e)
                 return True
     else:
-        logger.info("Already retweeted {} (id {})".format(
-            shorten_text(tweet_text, maxlength=140), tweet_id))
+        logger.info(
+            "Already retweeted {} (id {})".format(
+                shorten_text(tweet_text, maxlength=140), tweet_id
+            )
+        )
+
 
 def filter_tweet(status, twitter_api):
     """
@@ -306,15 +366,21 @@ def filter_tweet(status, twitter_api):
     """
 
     if status.is_quote_status:
-        quoted_tweet=twitter_api.get_status(status.quoted_status_id_str, tweet_mode="extended")
-        end_status= status.full_text+quoted_tweet.full_text
+        quoted_tweet = twitter_api.get_status(
+            status.quoted_status_id_str, tweet_mode="extended"
+        )
+        end_status = status.full_text + quoted_tweet.full_text
     else:
-        end_status= status.full_text
+        end_status = status.full_text
     if [x for x in add_hashtag if x in end_status.lower()]:
-        return (status.retweet_count + status.favorite_count, status.id_str, status.full_text)
+        return (
+            status.retweet_count + status.favorite_count,
+            status.id_str,
+            status.full_text,
+        )
 
 
-def search_and_retweet(flag='global_search', count=10):
+def search_and_retweet(flag="global_search", count=10):
     """Search for a query in tweets, and retweet those tweets.
 
     Parameters
@@ -328,12 +394,16 @@ def search_and_retweet(flag='global_search', count=10):
     """
     try:
         twitter_api = twitter_setup()
-        if flag == 'global_search':
+        if flag == "global_search":
             ## search results retweets globally forgiven keywords
-            search_results = twitter_api.search(q=get_query(), count=count, tweet_mode="extended")  ## standard search results
+            search_results = twitter_api.search(
+                q=get_query(), count=count, tweet_mode="extended"
+            )  ## standard search results
         else:
             ## search list retwwets most commented ad rt from the experts lists
-            search_results = twitter_api.list_timeline(list_id=mylist_id, count=count, tweet_mode="extended")  ## list to tweet from
+            search_results = twitter_api.list_timeline(
+                list_id=mylist_id, count=count, tweet_mode="extended"
+            )  ## list to tweet from
 
     except tweepy.TweepError as e:
         logger.debug(e.reason)
@@ -342,24 +412,33 @@ def search_and_retweet(flag='global_search', count=10):
     # Make sure we don't retweet any duplicates.
     count = 0
     ## get the most faved+ rtweeted and retweet it
-    max_val = sorted(([filter_tweet(x,twitter_api) for x in search_results if filter_tweet(x,twitter_api)]))
+    max_val = sorted(
+        (
+            [
+                filter_tweet(x, twitter_api)
+                for x in search_results
+                if filter_tweet(x, twitter_api)
+            ]
+        )
+    )
     print(max_val)
     if max_val:
-        while (True):
+        while True:
             logger.debug(max_val)
             tweet_id = max_val[-1 - count][1]
             tweet_text = max_val[-1 - count][2]
 
             if try_retweet(twitter_api, tweet_text, tweet_id):
-                logger.info(f'retweeted: {tweet_text}')
+                logger.info(f"retweeted: {tweet_text}")
                 break
-            elif count > len(search_results) or len(max_val)<2:
-                logger.debug('no more tweets to publish')
+            elif count > len(search_results) or len(max_val) < 2:
+                logger.debug("no more tweets to publish")
                 break
             else:
                 count += 1
                 time.sleep(2)
                 continue
+
 
 def is_in_logfile(content: str, filename: str) -> bool:
     """Does the content exist on any line in the log file?
@@ -398,7 +477,7 @@ def retweet_own():
                 logger.info(f"retweeted: {tweet.text}")
                 break
             else:
-                logger.info('already retweeted, trying next')
+                logger.info("already retweeted, trying next")
                 count += 1
 
     except tweepy.TweepError as e:
@@ -433,23 +512,23 @@ def scheduled_job():
     schedule.every().day.at("09:10").do(retweet_own)
     schedule.every().day.at("17:10").do(retweet_own)
     # job 3
-    schedule.every().day.at("00:20").do(search_and_retweet, 'global_search')
-    schedule.every().day.at("03:20").do(search_and_retweet, 'global_search')
-    schedule.every().day.at("06:20").do(search_and_retweet, 'global_search')
-    schedule.every().day.at("09:20").do(search_and_retweet, 'global_search')
-    schedule.every().day.at("12:20").do(search_and_retweet, 'global_search')
-    schedule.every().day.at("15:20").do(search_and_retweet, 'global_search')
-    schedule.every().day.at("18:20").do(search_and_retweet, 'global_search')
-    schedule.every().day.at("21:20").do(search_and_retweet, 'global_search')
+    schedule.every().day.at("00:20").do(search_and_retweet, "global_search")
+    schedule.every().day.at("03:20").do(search_and_retweet, "global_search")
+    schedule.every().day.at("06:20").do(search_and_retweet, "global_search")
+    schedule.every().day.at("09:20").do(search_and_retweet, "global_search")
+    schedule.every().day.at("12:20").do(search_and_retweet, "global_search")
+    schedule.every().day.at("15:20").do(search_and_retweet, "global_search")
+    schedule.every().day.at("18:20").do(search_and_retweet, "global_search")
+    schedule.every().day.at("21:20").do(search_and_retweet, "global_search")
     # job 4
-    schedule.every().day.at("01:25").do(search_and_retweet, 'list_search')
-    schedule.every().day.at("04:25").do(search_and_retweet, 'list_search')
-    schedule.every().day.at("07:25").do(search_and_retweet, 'list_search')
-    schedule.every().day.at("10:25").do(search_and_retweet, 'list_search')
-    schedule.every().day.at("13:25").do(search_and_retweet, 'list_search')
-    schedule.every().day.at("16:25").do(search_and_retweet, 'list_search')
-    schedule.every().day.at("19:25").do(search_and_retweet, 'list_search')
-    schedule.every().day.at("22:25").do(search_and_retweet, 'list_search')
+    schedule.every().day.at("01:25").do(search_and_retweet, "list_search")
+    schedule.every().day.at("04:25").do(search_and_retweet, "list_search")
+    schedule.every().day.at("07:25").do(search_and_retweet, "list_search")
+    schedule.every().day.at("10:25").do(search_and_retweet, "list_search")
+    schedule.every().day.at("13:25").do(search_and_retweet, "list_search")
+    schedule.every().day.at("16:25").do(search_and_retweet, "list_search")
+    schedule.every().day.at("19:25").do(search_and_retweet, "list_search")
+    schedule.every().day.at("22:25").do(search_and_retweet, "list_search")
 
     while 1:
         schedule.run_pending()
@@ -471,4 +550,3 @@ def display_help():
 
 if __name__ == "__main__":
     main()
-
