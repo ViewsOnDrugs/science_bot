@@ -3,7 +3,7 @@ import feedparser
 import os, string
 import sys
 import tweepy, time
-import schedule
+from schedule import Scheduler
 import time
 import smtplib, ssl
 import re
@@ -15,19 +15,7 @@ from dotenv import load_dotenv
 env_path = expanduser('~/.env')
 load_dotenv(dotenv_path=env_path)
 
-def send_log_mail(in_message):
-
-    message = f"""Subject: sci_bot failed!
-
-
-{in_message}."""
-    # Create a secure SSL context
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(os.getenv('GHOST'), os.getenv('PORT'), context=context) as server:
-        server.login(os.getenv('GUSERNAME'), os.getenv('GMAIL_PASS'))
-        server.sendmail(os.getenv('GUSERNAME'), os.getenv('RECEIVER'), message)
-
-
+# logging parameters
 logger = logging.getLogger('bot logger')
 # handler determines where the logs go: stdout/file
 file_handler = logging.FileHandler(f"{date.today()}_scibot.log")
@@ -35,39 +23,16 @@ file_handler = logging.FileHandler(f"{date.today()}_scibot.log")
 logger.setLevel(logging.DEBUG)
 file_handler.setLevel(logging.DEBUG)
 
-
 fmt_file = (
     "%(levelname)s %(asctime)s [%(filename)s: %(funcName)s:%(lineno)d] %(message)s"
 )
 
 file_formatter = logging.Formatter(fmt_file)
-
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 logger.info("logger configured")
 
-def main():
-    if len(sys.argv) > 1:
-        try:
-
-            if sys.argv[1].lower() == "rss":
-                read_rss_and_tweet(url=Settings.combined_feed)
-            elif sys.argv[1].lower() == "rtg":
-                search_and_retweet('global_search')
-            elif sys.argv[1].lower() == "rtl":
-                search_and_retweet('list_search')
-            elif sys.argv[1].lower() == "rto":
-                retweet_own()
-            elif sys.argv[1].lower() == "sch":
-
-                scheduled_job()
-
-        except Exception as e:
-            logging.debug(e)
-            send_log_mail(e)
-    else:
-        display_help()
-
+# main script variables to adapt
 add_hashtag = ['psilocybin', 'psilocybine' , 'psychedelic','psychological','hallucinogenic'
                'trip', 'therapy', 'psychiatry','dmt','mentalhealth','alzheimer','depression','axiety',
                'dopamine', 'serotonin', 'lsd', 'drug-policy','drugspolicy','drugpolicy', 'mdma',
@@ -80,6 +45,40 @@ mylist_id = '1306244304000749569'  # todo add covid example
 ## reosted error to ignore for the log.list
 IGNORE_ERRORS = [327]
 
+
+def main():
+    if len(sys.argv) > 1:
+        try:
+            if sys.argv[1].lower() == "rss":
+                read_rss_and_tweet(url=Settings.combined_feed)
+            elif sys.argv[1].lower() == "rtg":
+                search_and_retweet('global_search')
+            elif sys.argv[1].lower() == "rtl":
+                search_and_retweet('list_search')
+            elif sys.argv[1].lower() == "rto":
+                retweet_own()
+            elif sys.argv[1].lower() == "sch":
+                scheduled_job()
+
+        except Exception as e:
+            logger.debug(e, exc_info=True)
+            send_log_mail(e)
+
+    else:
+        display_help()
+
+
+def send_log_mail(in_message):
+
+    message = f"""Subject: sci_bot failed!
+
+
+{in_message}."""
+    # Create a secure SSL context
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(os.getenv('GHOST'), os.getenv('PORT'), context=context) as server:
+        server.login(os.getenv('GUSERNAME'), os.getenv('GMAIL_PASS'))
+        server.sendmail(os.getenv('GUSERNAME'), os.getenv('RECEIVER'), message)
 
 # Setup API:
 def twitter_setup():
@@ -116,6 +115,33 @@ class Settings:
 
     # Do not include tweets with these words when retweeting.
     retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork", "fuck"]
+
+class SafeScheduler(Scheduler):
+    """
+    An implementation of Scheduler that catches jobs that fail, logs their
+    exception tracebacks as errors, optionally reschedules the jobs for their
+    next run time, and keeps going.
+    Use this to run jobs that may or may not crash without worrying about
+    whether other jobs will run or if they'll crash the entire script.
+    """
+
+    def __init__(self, reschedule_on_failure=True):
+        """
+        If reschedule_on_failure is True, jobs will be rescheduled for their
+        next run as if they had completed successfully. If False, they'll run
+        on the next run_pending() tick.
+        """
+        self.reschedule_on_failure = reschedule_on_failure
+        super().__init__()
+
+    def _run_job(self, job):
+        try:
+            super()._run_job(job)
+
+        except Exception as e:
+            logger.debug(e)
+            job.last_run = datetime.datetime.now()
+            job._schedule_next_run()
 
 def compose_message(item: feedparser.FeedParserDict) -> str:
     """Compose a tweet from an RSS item (title, link, description)
@@ -169,7 +195,7 @@ def post_tweet(message: str):
     """
     try:
         twitter_api = twitter_setup()
-        # print('post_tweet():', message)
+        logger.info(f'post_tweet():{message}')
         twitter_api.update_status(status=message)
     except tweepy.TweepError as e:
         logger.error(e)
@@ -196,13 +222,13 @@ def read_rss_and_tweet(url: str):
                     print(item)
                     post_tweet(message=compose_message(item))
                     write_to_logfile(f"{link_id}", Settings.posted_urls_output_file)
-                    logging.info("Posted:", link_id, compose_message(item))
+                    logger.info(f"Posted:, {link_id}, {compose_message(item)}")
                     break
                 else:
-                    logging.info(count, "Already posted:", link_id, "Trying next")
+                    logger.info(f"count {count}, Already posted: {link_id} Trying next")
                     count += 1
     else:
-        logging.info("Nothing found in feed: ", url)
+        logger.info(f"Nothing found in feed:{url} ")
 
 
 def get_query() -> str:
@@ -235,15 +261,15 @@ def retweet_from_users(twitter_api,tweet_id):
         follows_friends_ratio= followers/friends
 
         if friends > followers:
-            future_friends.append((follows_friends_ratio,retweet.id))
-            logging.info(retweet.id_str,(retweet.author.screen_name, friends, followers),follows_friends_ratio)
+            future_friends.append((follows_friends_ratio,retweet.id_str))
+            logger.info(retweet.id_str,(retweet.author.screen_name, friends, followers),follows_friends_ratio)
         else:
-            future_friends.append((followers,retweet.id))
+            future_friends.append((followers,retweet.id_str))
     if future_friends:
-        logging.info('Retweeted from profile: ', min(future_friends))
+        logger.info(f'Retweeting from profile: {min(future_friends)}')
         return min(future_friends)[1]
     else:
-        logging.info('Retweeted from original post: ' ,tweet_id)
+        logger.info(f'Retweeting from original post: {tweet_id}')
         return tweet_id
 
 
@@ -259,17 +285,18 @@ def try_retweet(twitter_api, tweet_text, tweet_id):
             twitter_api.retweet(id=tweet_id)
             write_to_logfile(
                 tweet_id, Settings.posted_retweets_output_file)
-            logging.info("try_retweet(): Retweeted {} (id {})".format(shorten_text(
+            logger.info("saved to file and Retweeted {} (id {})".format(shorten_text(
                 tweet_text, maxlength=140), tweet_id))
             return True
         except tweepy.TweepError as e:
             if e.api_code in IGNORE_ERRORS:
+                logger.debug(e)
                 return False
             else:
-                logging.debug(e)
+                logger.debug(e)
                 return True
     else:
-        logging.info("Already retweeted {} (id {})".format(
+        logger.info("Already retweeted {} (id {})".format(
             shorten_text(tweet_text, maxlength=140), tweet_id))
 
 def filter_tweet(status, twitter_api):
@@ -309,25 +336,25 @@ def search_and_retweet(flag='global_search', count=10):
             search_results = twitter_api.list_timeline(list_id=mylist_id, count=count, tweet_mode="extended")  ## list to tweet from
 
     except tweepy.TweepError as e:
-        logging.debug(e.reason)
+        logger.debug(e.reason)
         return
 
     # Make sure we don't retweet any duplicates.
     count = 0
     ## get the most faved+ rtweeted and retweet it
     max_val = sorted(([filter_tweet(x,twitter_api) for x in search_results if filter_tweet(x,twitter_api)]))
-
+    print(max_val)
     if max_val:
         while (True):
-            logging.debug(max_val)
+            logger.debug(max_val)
             tweet_id = max_val[-1 - count][1]
             tweet_text = max_val[-1 - count][2]
 
             if try_retweet(twitter_api, tweet_text, tweet_id):
-                logging.info('retweeted: ', tweet_text)
+                logger.info(f'retweeted: {tweet_text}')
                 break
-            elif count > len(search_results) or len(max_val)>2:
-                logging.debug('no more tweets to publish')
+            elif count > len(search_results) or len(max_val)<2:
+                logger.debug('no more tweets to publish')
                 break
             else:
                 count += 1
@@ -367,15 +394,15 @@ def retweet_own():
             twitter_api = twitter_setup()
             tweet = twitter_api.user_timeline(id=twitter_api, count=10)[count]
             if not tweet.retweeted:
-#                 twitter_api.retweet(tweet.id_str)
-                logging.info("retweeted: ", tweet.text)
+                twitter_api.retweet(tweet.id_str)
+                logger.info(f"retweeted: {tweet.text}")
                 break
             else:
-                logging.info('already retweeted, trying next')
+                logger.info('already retweeted, trying next')
                 count += 1
 
     except tweepy.TweepError as e:
-        logging.debug(e)
+        logger.debug(e)
 
 
 def write_to_logfile(content: str, filename: str):
@@ -392,10 +419,11 @@ def write_to_logfile(content: str, filename: str):
         with open(filename, "a") as f:
             f.write(content + "\n")
     except IOError as e:
-        logging.debug(e)
+        logger.debug(e)
 
 
 def scheduled_job():
+    schedule = SafeScheduler()
     # job 1
     schedule.every().day.at("22:20").do(read_rss_and_tweet, url=Settings.combined_feed)
     schedule.every().day.at("06:20").do(read_rss_and_tweet, url=Settings.combined_feed)
