@@ -5,7 +5,7 @@ import sys
 import tweepy
 from schedule import Scheduler
 import time
-import smtplib, ssl
+from scibot.telebot import telegram_bot_sendtext
 import re
 import logging
 import datetime
@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 env_path = expanduser("~/.env")
 load_dotenv(dotenv_path=env_path)
+
 
 # logging parameters
 logger = logging.getLogger("bot logger")
@@ -30,7 +31,8 @@ fmt_file = (
 file_formatter = logging.Formatter(fmt_file)
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
-logger.info("logger configured")
+
+
 
 # main script variables to adapt
 add_hashtag = [
@@ -69,16 +71,21 @@ add_hashtag = [
 ## list of the distribution
 mylist_id = "1306244304000749569"  # todo add covid example
 ## reosted error to ignore for the log.list
-IGNORE_ERRORS = [327]
+IGNORE_ERRORS = [327,139]
 
 
 def main():
+
+
+    logger.info("\n### sciBot started ###\n\n")
     if len(sys.argv) > 1:
         try:
             if sys.argv[1].lower() == "rss":
                 read_rss_and_tweet(url=Settings.combined_feed)
             elif sys.argv[1].lower() == "rtg":
                 search_and_retweet("global_search")
+            elif sys.argv[1].lower() == "glv":
+                search_and_retweet("give_love")
             elif sys.argv[1].lower() == "rtl":
                 search_and_retweet("list_search")
             elif sys.argv[1].lower() == "rto":
@@ -87,27 +94,12 @@ def main():
                 scheduled_job()
 
         except Exception as e:
-            logger.debug(e, exc_info=True)
-            send_log_mail(e)
+            logger.exception(e, exc_info=True)
+            telegram_bot_sendtext("[ERROR] ", str(e))
 
     else:
         display_help()
-
-
-def send_log_mail(in_message):
-
-    message = f"""Subject: sci_bot failed!
-
-
-{in_message}."""
-    # Create a secure SSL context
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(
-        os.getenv("GHOST"), os.getenv("PORT"), context=context
-    ) as server:
-        server.login(os.getenv("GUSERNAME"), os.getenv("GMAIL_PASS"))
-        server.sendmail(os.getenv("GUSERNAME"), os.getenv("RECEIVER"), message)
-
+    logger.info("\n\n### sciBot finished ###")
 
 # Setup API:
 def twitter_setup():
@@ -116,7 +108,7 @@ def twitter_setup():
     auth.set_access_token(os.getenv("ACCESS_TOKEN"), os.getenv("ACCESS_SECRET"))
 
     # Return API access:
-    api = tweepy.API(auth)
+    api = tweepy.API(auth, wait_on_rate_limit=True,wait_on_rate_limit_notify=True)
     return api
 
 
@@ -139,6 +131,8 @@ class Settings:
 
     # Log file to save all retweeted tweets (one tweetid per line).
     posted_retweets_output_file = "/home/farcila/what_a_c/posted-retweets.log"
+
+    faved_tweets_output_file = "/home/farcila/what_a_c/faved_tweets.log"
 
     # Include tweets with these words when retweeting.
     retweet_include_words = [
@@ -182,7 +176,7 @@ class SafeScheduler(Scheduler):
             super()._run_job(job)
 
         except Exception as e:
-            logger.debug(e)
+            logger.exception(e)
             job.last_run = datetime.datetime.now()
             job._schedule_next_run()
 
@@ -271,6 +265,7 @@ def read_rss_and_tweet(url: str):
                     post_tweet(message=compose_message(item))
                     write_to_logfile(f"{link_id}", Settings.posted_urls_output_file)
                     logger.info(f"Posted:, {link_id}, {compose_message(item)}")
+                    telegram_bot_sendtext(f"Posted:, {link_id}, {compose_message(item)}")
                     break
                 else:
                     logger.info(f"count {count}, Already posted: {link_id} Trying next")
@@ -294,62 +289,70 @@ def get_query() -> str:
     return include + " " + exclude
 
 
-def retweet_from_users(twitter_api, tweet_id):
+
+def find_simple_users(twitter_api, tweet_id):
 
     """
     retweet from normal users retweeting something interesting
     """
+    # get original retweeter:
+    tester=twitter_api.get_status(tweet_id)
 
-    retweeters = twitter_api.retweets(tweet_id)
+    if hasattr(tester, 'retweeted_status'):
+        retweeters = twitter_api.retweets(tester.retweeted_status.id_str)
+    else: retweeters=twitter_api.retweets(tweet_id)
+#     print(retweeters)
 
     future_friends = []
     for retweet in retweeters:
-        friends = retweet.author.friends_count
-        followers = retweet.author.followers_count
-        follows_friends_ratio = followers / friends
-
-        if friends > followers:
-            future_friends.append((follows_friends_ratio, retweet.id_str))
-            logger.info(
-                retweet.id_str,
-                (retweet.author.screen_name, friends, followers),
-                follows_friends_ratio,
-            )
+        future_friends_dic={
+        'screen_name': retweet.author.screen_name,
+        'friends' : retweet.author.friends_count,
+        'followers' : retweet.author.followers_count,
+        'follows_friends_ratio' : retweet.author.followers_count / retweet.author.friends_count
+            }
+        if future_friends_dic['friends'] > future_friends_dic['followers']:
+            future_friends.append((future_friends_dic['follows_friends_ratio'],
+                                   retweet.id_str,future_friends_dic))
         else:
-            future_friends.append((followers, retweet.id_str))
+            future_friends.append((future_friends_dic['followers'], retweet.id_str,future_friends_dic))
     if future_friends:
-        logger.info(f"Retweeting from profile: {min(future_friends)}")
-        return min(future_friends)[1]
+        min_friend=min(future_friends)
+        logger.info(f"try retweeting/fav {min_friend[1]} from potential friend profile: {min_friend[2]['screen_name']} friends= {min_friend[2]['friends']}, followrs={min_friend[2]['followers']}")
+        telegram_bot_sendtext(f"try retweeting/fav {min_friend[1]} from potential friend profile: {min_friend[2]['screen_name']} friends= {min_friend[2]['friends']}, followrs={min_friend[2]['followers']}")
+        return min_friend[1]
     else:
-        logger.info(f"Retweeting from original post: {tweet_id}")
+        logger.info(f"try retweeting from original post: {tweet_id}")
         return tweet_id
+
+
 
 
 def try_retweet(twitter_api, tweet_text, tweet_id):
     """try to retweet, if already retweeted try next fom the list
     of recent tweets"""
 
-    tweet_id = retweet_from_users(twitter_api, tweet_id)
+    tweet_id = find_simple_users(twitter_api, tweet_id)
 
     if (
         not is_in_logfile(tweet_id, Settings.posted_retweets_output_file)
-        and len(tweet_text.split()) > 3
     ):
         try:
             twitter_api.retweet(id=tweet_id)
+            logger.info(f"tryed to rt {tweet_id}")
             write_to_logfile(tweet_id, Settings.posted_retweets_output_file)
-            logger.info(
-                "saved to file and Retweeted {} (id {})".format(
-                    shorten_text(tweet_text, maxlength=140), tweet_id
-                )
-            )
+            message_log="saved to file and Retweeted {} (id {})".format( tweet_id,
+                    shorten_text(tweet_text, maxlength=140))
+
+            telegram_bot_sendtext(message_log)
+            logger.info(message_log)
             return True
         except tweepy.TweepError as e:
             if e.api_code in IGNORE_ERRORS:
-                logger.debug(e)
+                logger.exception(e)
                 return False
             else:
-                logger.debug(e)
+                logger.error(e)
                 return True
     else:
         logger.info(
@@ -359,7 +362,7 @@ def try_retweet(twitter_api, tweet_text, tweet_id):
         )
 
 
-def filter_tweet(status, twitter_api):
+def filter_tweet(status, twitter_api, flag):
     """
     function to ensure that retweets are on-topic
     by the hashtag list
@@ -372,12 +375,75 @@ def filter_tweet(status, twitter_api):
         end_status = status.full_text + quoted_tweet.full_text
     else:
         end_status = status.full_text
-    if [x for x in add_hashtag if x in end_status.lower()]:
-        return (
-            status.retweet_count + status.favorite_count,
-            status.id_str,
-            status.full_text,
-        )
+
+    if len(end_status.split()) >3:
+
+        if [x for x in add_hashtag+Settings.retweet_include_words if x in end_status.lower(
+        )]:
+            return (
+                status.retweet_count + status.favorite_count,
+                status.id_str,
+                status.full_text,
+            )
+
+    else: return
+
+def try_give_love(twitter_api, tweet_id):
+    """try to favorite a post"""
+
+    tweet_id = find_simple_users(twitter_api, tweet_id)
+
+    if not is_in_logfile(tweet_id, Settings.faved_tweets_output_file):
+
+        try:
+            twitter_api.create_favorite(id=tweet_id)
+            write_to_logfile(tweet_id, Settings.faved_tweets_output_file)
+            message_log="faved tweet saved to file (id {})".format(tweet_id)
+            logger.info(message_log)
+            telegram_bot_sendtext(message_log)
+
+            return True
+
+        except tweepy.TweepError as e:
+            if e.api_code in IGNORE_ERRORS:
+                logger.exception(e)
+                return False
+            else:
+                logger.error(e)
+                return True
+
+    else:
+        logger.info( "Already faved (id {})".format( tweet_id))
+
+def fav_or_tweet(count, max_val, flag, twitter_api):
+
+    """
+    use a tweet or a fav function depending on the flag called
+    """
+
+    while count < len(max_val):
+                logger.debug(max_val)
+                tweet_id = max_val[-1 - count][1]
+                tweet_text = max_val[-1 - count][2]
+                logger.info(f"{len(tweet_text.split())}, {tweet_text}")
+
+                if flag == "give_love":
+                    use_function=try_give_love(twitter_api, tweet_id)
+                    log_message= "faved"
+
+                else:
+                    use_function= try_retweet(twitter_api, tweet_text, tweet_id)
+                    log_message= "retweeted"
+
+                if  use_function:
+                    logger.info(f"{log_message}: id={tweet_id} text={tweet_text}")
+                    break
+                else:
+                    count += 1
+                    time.sleep(2)
+                    if count >= len(max_val):
+                        logger.debug(f"no more tweets to {log_message}")
+                    continue
 
 
 def search_and_retweet(flag="global_search", count=10):
@@ -392,9 +458,10 @@ def search_and_retweet(flag="global_search", count=10):
         Number of tweets to search for. You should probably keep this low
         when you use search_and_retweet() on a schedule (e.g. cronjob).
     """
+
     try:
         twitter_api = twitter_setup()
-        if flag == "global_search":
+        if flag in ["global_search", "give_love"]:
             ## search results retweets globally forgiven keywords
             search_results = twitter_api.search(
                 q=get_query(), count=count, tweet_mode="extended"
@@ -406,38 +473,19 @@ def search_and_retweet(flag="global_search", count=10):
             )  ## list to tweet from
 
     except tweepy.TweepError as e:
-        logger.debug(e.reason)
+        logger.exception(e.reason)
+        telegram_bot_sendtext("ERROR :" + str(e.reason))
         return
 
     # Make sure we don't retweet any duplicates.
     count = 0
-    ## get the most faved+ rtweeted and retweet it
-    max_val = sorted(
-        (
-            [
-                filter_tweet(x, twitter_api)
+    ## get the most faved + rtweeted and retweet it
+    max_val = sorted(([filter_tweet(x, twitter_api, flag)
                 for x in search_results
-                if filter_tweet(x, twitter_api)
-            ]
-        )
+                if filter_tweet(x, twitter_api, flag)])
     )
-    print(max_val)
-    if max_val:
-        while True:
-            logger.debug(max_val)
-            tweet_id = max_val[-1 - count][1]
-            tweet_text = max_val[-1 - count][2]
 
-            if try_retweet(twitter_api, tweet_text, tweet_id):
-                logger.info(f"retweeted: {tweet_text}")
-                break
-            elif count > len(search_results) or len(max_val) < 2:
-                logger.debug("no more tweets to publish")
-                break
-            else:
-                count += 1
-                time.sleep(2)
-                continue
+    fav_or_tweet(count, max_val, flag, twitter_api)
 
 
 def is_in_logfile(content: str, filename: str) -> bool:
@@ -475,13 +523,15 @@ def retweet_own():
             if not tweet.retweeted:
                 twitter_api.retweet(tweet.id_str)
                 logger.info(f"retweeted: {tweet.text}")
+                telegram_bot_sendtext(f"retweeted: {tweet.text}")
                 break
             else:
                 logger.info("already retweeted, trying next")
                 count += 1
 
     except tweepy.TweepError as e:
-        logger.debug(e)
+        logger.exception(e)
+        telegram_bot_sendtext("ERROR :" + str(e))
 
 
 def write_to_logfile(content: str, filename: str):
@@ -498,7 +548,7 @@ def write_to_logfile(content: str, filename: str):
         with open(filename, "a") as f:
             f.write(content + "\n")
     except IOError as e:
-        logger.debug(e)
+        logger.exception(e)
 
 
 def scheduled_job():
@@ -529,6 +579,8 @@ def scheduled_job():
     schedule.every().day.at("16:25").do(search_and_retweet, "list_search")
     schedule.every().day.at("19:25").do(search_and_retweet, "list_search")
     schedule.every().day.at("22:25").do(search_and_retweet, "list_search")
+    # job love
+    schedule.every(58).minutes.do(search_and_retweet, "give_love")
 
     while 1:
         schedule.run_pending()
@@ -543,6 +595,7 @@ def display_help():
     print("    rss    Read URL and post new items to Twitter")
     print("    rtg    Search and retweet keywords from global feed")
     print("    rtl    Search and retweet keywords from list feed")
+    print("    glv    Fav tweets from list or globally")
     print("    rto    Retweet last own tweet")
     print("    sch    Run scheduled jobs on infinite loop")
     print("    help   Show this help screen")
