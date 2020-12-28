@@ -305,6 +305,10 @@ def find_simple_users(twitter_api, tweet_id):
 
     future_friends = []
     for retweet in retweeters:
+
+        if retweet.author.screen_name.lower() == 'drugscibot':
+            continue# don't fav your self
+
         future_friends_dic={
         'screen_name': retweet.author.screen_name,
         'friends' : retweet.author.friends_count,
@@ -319,7 +323,7 @@ def find_simple_users(twitter_api, tweet_id):
     if future_friends:
         min_friend=min(future_friends)
         logger.info(f"try retweeting/fav {min_friend[1]} from potential friend profile: {min_friend[2]['screen_name']} friends= {min_friend[2]['friends']}, followrs={min_friend[2]['followers']}")
-        telegram_bot_sendtext(f"try retweeting/fav {min_friend[1]} from potential friend profile: {min_friend[2]['screen_name']} friends= {min_friend[2]['friends']}, followrs={min_friend[2]['followers']}")
+        telegram_bot_sendtext(f"try retweeting/fav {min_friend[1]} from potential friend profile: twitter.com/{min_friend[2]['screen_name']} friends= {min_friend[2]['friends']}, followrs={min_friend[2]['followers']}")
         return min_friend[1]
     else:
         logger.info(f"try retweeting from original post: {tweet_id}")
@@ -328,11 +332,11 @@ def find_simple_users(twitter_api, tweet_id):
 
 
 
-def try_retweet(twitter_api, tweet_text, tweet_id):
+def try_retweet(twitter_api, tweet_text, in_tweet_id):
     """try to retweet, if already retweeted try next fom the list
     of recent tweets"""
 
-    tweet_id = find_simple_users(twitter_api, tweet_id)
+    tweet_id = find_simple_users(twitter_api, in_tweet_id)
 
     if (
         not is_in_logfile(tweet_id, Settings.posted_retweets_output_file)
@@ -388,12 +392,13 @@ def filter_tweet(status, twitter_api, flag):
 
     else: return
 
-def try_give_love(twitter_api, tweet_id):
+def try_give_love(twitter_api, in_tweet_id):
     """try to favorite a post"""
 
-    tweet_id = find_simple_users(twitter_api, tweet_id)
+    tweet_id = find_simple_users(twitter_api, in_tweet_id)
 
-    if not is_in_logfile(tweet_id, Settings.faved_tweets_output_file):
+    if not is_in_logfile(tweet_id,
+                         Settings.faved_tweets_output_file) and tweet_id != in_tweet_id:
 
         try:
             twitter_api.create_favorite(id=tweet_id)
@@ -432,7 +437,7 @@ def fav_or_tweet(count, max_val, flag, twitter_api):
                     log_message= "faved"
 
                 else:
-                    use_function= try_retweet(twitter_api, tweet_text, tweet_id)
+                    use_function = try_retweet(twitter_api, tweet_text, tweet_id)
                     log_message= "retweeted"
 
                 if  use_function:
