@@ -47,19 +47,24 @@ class Settings:
     faved_tweets_output_file = "/home/farcila/what_a_c/faved-tweets.log"
 
     # Log file to save followers list.
-    followers_output_file = "/home/farcila/what_a_c/followers.log"
+    users_json_file = "/home/farcila/what_a_c/users.json"
+
 
     # Include tweets with these words when retweeting.
     retweet_include_words = [
         "drugpolicy",
         "drugspolicy",
         "transformdrugspolicy",
-        "transformdrugspolicy",
+        "transformdrugpolicy",
         "drugchecking",
         "regulatestimulants",
+        "regulatedrugs",
+        "sensibledrugpolicy",
+        "drugpolicyreform",
         "safeconsumption",
         "harmreduction",
         "druguse",
+        "safesuply",
         "safersuply",
     ]
 
@@ -68,7 +73,7 @@ class Settings:
 
     add_hashtag = ['psilocybin', 'psilocybine', 'psychedelic', 'psychological',
                    'hallucinogenictrip', 'therapy', 'psychiatry', 'dmt',
-                   'mentalhealth', 'alzheimer', 'depression', 'axiety',
+                   'mentalhealth', 'alzheimer', 'depression', 'anxiety',
                    'dopamine', 'serotonin', 'lsd', 'drug-policy', 'drugspolicy',
                    'drugpolicy', 'mdma', 'microdosing', 'drug', 'ayahuasca',
                    'psychopharmacology', 'clinical trial', 'neurogenesis',
@@ -194,8 +199,7 @@ def shorten_text(text: str, maxlength: int) -> str:
 def scheduled_job(check_new_followers,read_rss_and_tweet,retweet_own,search_and_retweet):
     schedule = SafeScheduler()
     # job 0 check followers
-    schedule.every().day.at("00:20").do(check_new_followers,
-                                        Settings.followers_output_file)
+    schedule.every().day.at("00:20").do(check_new_followers)
     # job 1
     schedule.every().day.at("22:20").do(read_rss_and_tweet, url=Settings.combined_feed)
     schedule.every().day.at("06:20").do(read_rss_and_tweet, url=Settings.combined_feed)

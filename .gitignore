@@ -5,7 +5,9 @@ posted
 *.pyc
 *ipynb
 *.log
+*.json
 venv/
+nohup.out
 scibot/__pycache__/
 shared_drugsci_friends.csv
 user_friends.json
