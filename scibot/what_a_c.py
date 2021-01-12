@@ -1,10 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import sys
 import tweepy
 import time
 from scibot.telebot import telegram_bot_sendtext
-import re
 import json
 from scibot.tools import (logger, Settings,
 shorten_text, compose_message, is_in_logfile, write_to_logfile, scheduled_job)
@@ -13,6 +12,7 @@ from dotenv import load_dotenv
 
 env_path = expanduser("~/.env")
 load_dotenv(dotenv_path=env_path)
+
 
 
 def main():
@@ -30,12 +30,19 @@ def main():
                 search_and_retweet("list_search")
             elif sys.argv[1].lower() == "rto":
                 retweet_own()
+            elif sys.argv[1].lower() == "cnf":
+                check_new_followers()
             elif sys.argv[1].lower() == "sch":
                 scheduled_job(check_new_followers,read_rss_and_tweet,retweet_own,search_and_retweet)
 
         except Exception as e:
             logger.exception(e, exc_info=True)
-            telegram_bot_sendtext(f"[ERROR] {e}")
+            telegram_bot_sendtext(f"[Exception] {e.reason}")
+
+        except IOError as errno:
+            logger.exception(f"[ERROR] {errno}")
+            telegram_bot_sendtext(f"[ERROR] {errno}")
+
 
     else:
         display_help()
@@ -51,9 +58,6 @@ def twitter_setup():
     # Return API access:
     api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
     return api
-
-def insert_hash(string, index):
-    return string[:index] + "#" + string[index:]
 
 
 def get_followers_list():
@@ -81,9 +85,10 @@ def json_add_new_friend(user_id):
         users_dic = json.load(json_file)
     if not user_id in users_dic:
         users_dic[user_id]={'follower': True, 'interactions': 0}
+    else: users_dic[user_id]['follower'] = True
 
     with open(Settings.users_json_file, "w") as json_file:
-        json.dump(users_dic, json_file, indent=4, sort_keys=True)
+        json.dump(users_dic, json_file, indent=4)
 
 def check_new_followers():
 
@@ -92,7 +97,7 @@ def check_new_followers():
     new_folks=[]
     for x  in twitter_api.followers(count=100):
         if x.id_str not in get_followers_list():
-            print( x.id_str)
+            print(x.id_str)
             new_folks.append(f"https://twitter.com/{x.screen_name}")
             json_add_new_friend(x.id_str)
     if new_folks:
@@ -155,7 +160,7 @@ def json_add_user(user_id):
         users_dic[user_id]['interactions']+=1
 
     with open(Settings.users_json_file, "w") as json_file:
-        json.dump(users_dic, json_file, indent=4, sort_keys=True)
+        json.dump(users_dic, json_file, indent=4)
 
 def read_rss_and_tweet(url: str):
     """Read RSS and post feed items as a tweet.
@@ -165,26 +170,34 @@ def read_rss_and_tweet(url: str):
     url: str
         URL to RSS feed.
     """
-    feeds = Settings.combined_feed
+    feed = url
     count = 0
 
-    if feeds:
-        for feed in feeds:
-            while count in range(0, len(feed["items"])):
-                item = feed["items"][count]
-                link_id = item.id
+    if feed:
+        print(len(feed))
+#         for feed in feeds:
+        while count in range(0, len(feed)):
+            item = feed[count]
+            link_id = item.id
 
-                if not is_in_logfile(link_id, Settings.posted_urls_output_file):
-                    post_tweet(message=compose_message(item))
-                    write_to_logfile(f"{link_id}", Settings.posted_urls_output_file)
-                    logger.info(f"Posted:, {link_id}, {compose_message(item)}")
-                    telegram_bot_sendtext(
+            if not is_in_logfile(link_id, Settings.posted_urls_output_file):
+                post_tweet(message=compose_message(item))
+                write_to_logfile(f"{link_id}", Settings.posted_urls_output_file)
+                logger.info(f"Posted:, {link_id}, {compose_message(item)}")
+                telegram_bot_sendtext(
                         f"Posted:, {link_id}, {compose_message(item)}"
                     )
-                    break
-                else:
-                    logger.info(f"count {count}, Already posted: https://twitter.com/i/status/{link_id} Trying next")
-                    count += 1
+                break
+            elif count < len(feed)-1:
+                logger.debug(f"count {count}, Already posted: https://twitter.com/i/status/{link_id} Trying next")
+                count += 1
+
+            else:
+                logger.info(f"trimming file{count}, {len(feed)}")
+                telegram_bot_sendtextf("trimming file{count}, {len(feed)}")
+                trim_logfile(Settings.posted_urls_output_file)
+
+
     else:
         logger.info(f"Nothing found in feed:{url} ")
 
@@ -219,7 +232,7 @@ def check_interactions(tweet):
         down_limit=round(sum(user_list)/len(user_list))
 
         if auth_id in users_dic:
-            if users_dic[auth_id]['interactions'] > down_limit:
+            if users_dic[auth_id]['interactions'] >= down_limit:
                 return True
             else:
                 return False
@@ -233,16 +246,16 @@ def try_retweet(twitter_api, tweet_text, in_tweet_id, self_followers):
 
     tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers)
 
-    if not is_in_logfile(tweet_id, Settings.posted_retweets_output_file):
+    if not is_in_logfile(in_tweet_id, Settings.posted_retweets_output_file):
         try:
             twitter_api.retweet(id=tweet_id)
             logger.info(f"Trying to rt {tweet_id}")
-            write_to_logfile(tweet_id, Settings.posted_retweets_output_file)
+            write_to_logfile(in_tweet_id, Settings.posted_retweets_output_file)
             _status=twitter_api.get_status(tweet_id)
             json_add_user(_status.author.id_str)
             if tweet_id == in_tweet_id:
                 id_mess=f"{tweet_id} original"
-            else: id_mess=f"{tweet_id} from a frnd"
+            else: id_mess=f"{tweet_id} from a nested profile"
             message_log = "Retweeted and saved to file >  https://twitter.com/i/status/{}".format(
                 id_mess
             )
@@ -472,27 +485,51 @@ def search_and_retweet(flag="global_search", count=40):
 
     fav_or_tweet(max_val, flag, twitter_api)
 
+def trim_logfile(filename: str):
+    """Trim RSS file when it has reached the end, on one line.
+
+    Parameters
+    ----------
+    filename: str
+        Full path to file that should be trimmed.
+    """
+    try:
+        with open(filename, "r") as f:
+            lines = f.readlines()
+            trimmed=lines[:(round(len(lines)/2))]
+            print(len(lines))
+            print(len(lines)/2)
+
+
+        with open(filename, "w") as f:
+            f.write("".join(trimmed))
+    except IOError as e:
+        logger.exception(e)
+
 def retweet_own():
     """
     re-tweet self last tweetet message.
     """
-    count = 0
+
     try:
-        while True:
-            twitter_api = twitter_setup()
-            tweet = twitter_api.user_timeline(id=twitter_api, count=40)[count]
-            if not tweet.retweeted:
-                twitter_api.retweet(tweet.id_str)
-                logger.info(f"retweeted: {tweet.text}")
-                telegram_bot_sendtext(f"retweeted: twitter.com/i/status/{tweet.id_str}")
-                break
-            else:
-                logger.info("already retweeted, trying next")
-                count += 1
+
+        twitter_api = twitter_setup()
+        own_tweets = twitter_api.user_timeline(id=twitter_api, count=10)
+        to_retweet=[t for t in own_tweets if not t.retweeted][0]
+
+        if to_retweet:
+            twitter_api.retweet(to_retweet.id_str)
+            logger.info(f"retweeted: {to_retweet.text}")
+            telegram_bot_sendtext(f"Self retweeted: twitter.com/i/status/{to_retweet.id_str}")
+
+        else:
+            logger.info("No more own tweets to retweet")
+
 
     except tweepy.TweepError as e:
         logger.exception(e)
         telegram_bot_sendtext(f"ERROR :{e}")
+
 
 def display_help():
     """Show available commands."""

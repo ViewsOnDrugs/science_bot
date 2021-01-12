@@ -4,6 +4,7 @@ import os
 import time
 import datetime
 import feedparser
+import dateutil.parser
 from schedule import Scheduler
 
 # logging parameters
@@ -34,10 +35,17 @@ class Settings:
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1Di1IZzM0R4FRnKYsI1qINYHDYUiWSVAWo0rd3bhufn34wQ9HU/?limit=100&utm_campaign=pubmed-2&fc=20201028084526",
         "http://export.arxiv.org/api/query?search_query=all:psilocybin*&start=0&max_results=100&sortBy=lastUpdatedDate&sortOrder=descending",
     ]
-    # nested list/dictionary comprehension to parse multiple RSS feeds
-    combined_feed = [
-        feedparser.parse(url) for url in feed_urls
-    ]  # Log file to save all tweeted RSS links (one URL per line).
+
+    pre_combined_feed = [feedparser.parse(url)['entries'] for url in feed_urls]
+
+    # (combined_feed)
+
+    combined_feed = [item for feed in pre_combined_feed for item in feed]
+    combined_feed.sort(key=lambda x: dateutil.parser.parse(x['published']), reverse=True)
+
+
+
+    # Log file to save all tweeted RSS links (one URL per line).
     posted_urls_output_file = "/home/farcila/what_a_c/posted-urls.log"
 
     # Log file to save all retweeted tweets (one tweetid per line).
@@ -69,7 +77,7 @@ class Settings:
     ]
 
     # Do not include tweets with these words when retweeting.
-    retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork", "fuck"]
+    retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork", "fuck", "vaping", "vape"]
 
     add_hashtag = ['psilocybin', 'psilocybine', 'psychedelic', 'psychological',
                    'hallucinogenictrip', 'therapy', 'psychiatry', 'dmt',
@@ -112,6 +120,8 @@ class SafeScheduler(Scheduler):
             job.last_run = datetime.datetime.now()
             job._schedule_next_run()
 
+def insert_hash(string, index):
+    return string[:index] + "#" + string[index:]
 
 def compose_message(item: feedparser.FeedParserDict) -> str:
     """Compose a tweet from an RSS item (title, link, description)
