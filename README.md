@@ -1,6 +1,7 @@
- #  Bot, what a concept!
 
- ## :cactus:
+#  Bot, what a concept!
+
+## :cactus:
 
 Built on top of @peterdalle's [Twitterbot](https://github.com/peterdalle/twitterbot), uses `tweepy` instead of `twython` and adds further functionality:
 
@@ -35,7 +36,7 @@ All functions can be used independently.
 Read the RSS feeds and post to Twitter account:
 
 ```bash
-$ scibot rss   
+$ scibot rss
 ```
 
 Search globally for tweets and retweet them:

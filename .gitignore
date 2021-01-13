@@ -1,6 +1,6 @@
+users.json
 access.py*
 posted-*
-posted
 .env
 *.pyc
 *ipynb

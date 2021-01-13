@@ -264,6 +264,7 @@ def try_retweet(twitter_api, tweet_text, in_tweet_id, self_followers):
             return True
         except tweepy.TweepError as e:
             if e.api_code in Settings.IGNORE_ERRORS:
+                write_to_logfile(in_tweet_id, Settings.posted_retweets_output_file)
                 logger.exception(e)
                 return False
             else:
