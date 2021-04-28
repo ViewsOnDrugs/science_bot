@@ -5,6 +5,7 @@ import time
 import datetime
 import feedparser
 import dateutil.parser
+from scibot.telebot import telegram_bot_sendtext
 from schedule import Scheduler
 
 # logging parameters
@@ -31,8 +32,11 @@ class Settings:
     """
     IGNORE_ERRORS = [327, 139]
     # RSS feeds to read and post tweets from.
-    feed_urls = [
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1Di1IZzM0R4FRnKYsI1qINYHDYUiWSVAWo0rd3bhufn34wQ9HU/?limit=100&utm_campaign=pubmed-2&fc=20201028084526",
+    feed_urls = ["https://pubmed.ncbi.nlm.nih.gov/rss/search/1VePQbT36PBuW-0vYWywv3PuF6BRnl6iwoIY8Ud6bo2ad7LQCq/?limit=50&utm_campaign=pubmed-2&fc=20210420053033",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1HM5Uxfu7f2DxEmuq-aqm79Um6H97z55gW-utYd5e1Fq1Yngod/?limit=50&utm_campaign=pubmed-2&fc=20210420053153",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1NSu_CQNBizlmYqaPvjt8_hPOGlOnPaTChO-SFWN36pp7ZkgSs/?limit=50&utm_campaign=pubmed-2&fc=20210420053222",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1DK1DQN9MQ-BeubNAzIyke3Nq-hO8OkCvOE2oueFRGqqvy8gei/?limit=50&utm_campaign=pubmed-2&fc=20210420053342",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1DK1DQN9MQ-BeubNAzIyke3Nq-hO8OkCvOE2oueFRGqqvy8gei/?limit=50&utm_campaign=pubmed-2&fc=20210420053342",
         "http://export.arxiv.org/api/query?search_query=all:psilocybin*&start=0&max_results=100&sortBy=lastUpdatedDate&sortOrder=descending",
     ]
 
@@ -77,18 +81,18 @@ class Settings:
     ]
 
     # Do not include tweets with these words when retweeting.
-    retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork", "fuck", "vaping", "vape"]
+    retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork", "fuck", "vaping", "vape", "cigarretes", "smoke", "smoking"]
 
     add_hashtag = ['psilocybin', 'psilocybine', 'psychedelic', 'psychological',
-                   'hallucinogenictrip', 'therapy', 'psychiatry', 'dmt',
-                   'mentalhealth', 'alzheimer', 'depression', 'anxiety',
+                   'hallucinogenic', 'therapy', 'psychiatry', 'dmt',
+                   'mentalhealth', 'mental health', 'alzheimer', 'depression', 'anxiety',
                    'dopamine', 'serotonin', 'lsd', 'drug-policy', 'drugspolicy',
-                   'drugpolicy', 'mdma', 'microdosing', 'drug', 'ayahuasca',
+                   'drugpolicy', 'drug policy', 'mdma', 'microdosing', 'drug', 'ayahuasca',
                    'psychopharmacology', 'clinical trial', 'neurogenesis',
                    'serotonergic', 'ketamine', 'consciousness', 'psychotherapy',
-                   'meta-analysis']
+                   'meta-analysis', 'trip', 'harm reduction'] #trip
     ## list of the distribution
-    mylist_id = "1306244304000749569"  # todo add covid example
+    mylist_id = "1306244304000749569"
     ## reosted error to ignore for the log.list
 
 
@@ -117,11 +121,15 @@ class SafeScheduler(Scheduler):
 
         except Exception as e:
             logger.exception(e)
+            telegram_bot_sendtext(f"[Job Error] {e}")
             job.last_run = datetime.datetime.now()
             job._schedule_next_run()
 
-def insert_hash(string, index):
-    return string[:index] + "#" + string[index:]
+def insert_hash(string, index, strip=False):
+    if strip:
+        return string[:index] + "#" + string[index:].replace(' ', '', 1)
+    else:
+        return string[:index] + "#" + string[index:]
 
 def compose_message(item: feedparser.FeedParserDict) -> str:
     """Compose a tweet from an RSS item (title, link, description)
@@ -142,7 +150,10 @@ def compose_message(item: feedparser.FeedParserDict) -> str:
     for x in Settings.add_hashtag:
         if re.search(fr"\b{x}", title.lower()):
             pos = (re.search(fr"\b{x}", title.lower())).start()
-            title = insert_hash(title, pos)
+            if " " in x:
+                title = insert_hash(title, pos, strip=True)
+            else:
+                title = insert_hash(title, pos)
     link, _ = item["link"], item["description"]
     message = shorten_text(title, maxlength=250) + " " + link
     return message
@@ -237,7 +248,7 @@ def scheduled_job(check_new_followers,read_rss_and_tweet,retweet_own,search_and_
     schedule.every().day.at("19:25").do(search_and_retweet, "list_search")
     schedule.every().day.at("22:25").do(search_and_retweet, "list_search")
     # job love
-    schedule.every(58).minutes.do(search_and_retweet, "give_love")
+    schedule.every(30).minutes.do(search_and_retweet, "give_love")
 
     while 1:
         schedule.run_pending()

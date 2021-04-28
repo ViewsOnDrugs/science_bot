@@ -3,6 +3,7 @@ import os
 import sys
 import tweepy
 import time
+from random import randint
 from scibot.telebot import telegram_bot_sendtext
 import json
 from scibot.tools import (logger, Settings,
@@ -33,11 +34,11 @@ def main():
             elif sys.argv[1].lower() == "cnf":
                 check_new_followers()
             elif sys.argv[1].lower() == "sch":
-                scheduled_job(check_new_followers,read_rss_and_tweet,retweet_own,search_and_retweet)
+                scheduled_job(check_new_followers, read_rss_and_tweet, retweet_own, search_and_retweet)
 
         except Exception as e:
             logger.exception(e, exc_info=True)
-            telegram_bot_sendtext(f"[Exception] {e.reason}")
+            telegram_bot_sendtext(f"[Exception] {e}")
 
         except IOError as errno:
             logger.exception(f"[ERROR] {errno}")
@@ -60,7 +61,7 @@ def twitter_setup():
     return api
 
 
-def get_followers_list():
+def get_followers_list(): #todo change to read_followers_json
     """Get list of followers from last check in
 
     Parameters
@@ -84,7 +85,7 @@ def json_add_new_friend(user_id):
     with open(Settings.users_json_file, "r") as json_file:
         users_dic = json.load(json_file)
     if not user_id in users_dic:
-        users_dic[user_id]={'follower': True, 'interactions': 0}
+        users_dic[user_id]={'follower': True, 'interactions': 1}
     else: users_dic[user_id]['follower'] = True
 
     with open(Settings.users_json_file, "w") as json_file:
@@ -194,7 +195,7 @@ def read_rss_and_tweet(url: str):
 
             else:
                 logger.info(f"trimming file{count}, {len(feed)}")
-                telegram_bot_sendtextf("trimming file{count}, {len(feed)}")
+                telegram_bot_sendtext("trimming file{count}, {len(feed)}")
                 trim_logfile(Settings.posted_urls_output_file)
 
 
@@ -366,7 +367,7 @@ def filter_tweet(search_results, twitter_api, flag):
         if len(end_status.split()) > 3 and faved_sum[2] > 1:
 
             if [x
-                for x in Settings.add_hashtag + Settings.retweet_include_words
+                for x in Settings.add_hashtag + Settings.retweet_include_words #- ['trip'] # review behaviour of this function
                 if x in end_status.lower()]:
                 filtered_search_results.append((
                     faved_sum,
@@ -379,6 +380,8 @@ def filter_tweet(search_results, twitter_api, flag):
 
 def try_give_love(twitter_api, in_tweet_id, self_followers):
     """try to favorite a post from simple users"""
+    # todo add flag to use sleep or fav immediately
+
 
     tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers)
 
@@ -387,6 +390,7 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
     ):
 
         try:
+            time.sleep(randint(0,600))
             twitter_api.create_favorite(id=tweet_id)
             write_to_logfile(in_tweet_id, Settings.faved_tweets_output_file)
             _status=twitter_api.get_status(tweet_id)
