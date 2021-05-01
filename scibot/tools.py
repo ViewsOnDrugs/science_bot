@@ -95,10 +95,10 @@ class Settings:
                     'harm reduction', 'methadone'] #trip
 
     watch_add_hashtag = ['cocaina', 'cocaine', 'alzheimer', 'depression', 'anxiety',
-                   'droga','coca','dmt', 'lsd','therapy', 'psychiatry', 'mentalhealth',
+                   'droga','coca','dmt', 'lsd','therapy', 'psychiatry', 'mentalhealth', 'trip',
                   'mental health', 'clinical trial', 'consciousness', 'drug', 'meta-analysis',
                    'dopamine', 'serotonin', 'psychological', 'metaanalysis', 'reform']
-    
+
     ## list of the distribution
     mylist_id = "1306244304000749569"
     ## reosted error to ignore for the log.list

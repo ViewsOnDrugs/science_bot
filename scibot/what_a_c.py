@@ -377,23 +377,10 @@ def filter_tweet(search_results, twitter_api, flag):
 
             if keyword_matches:
 
-                if 'drug' in keyword_matches and len(keyword_matches)>1:
-    #                 print(first_match,end_status,first_match)
-                    filtered_search_results.append((
-                        faved_sum,
-                        status.id_str,
-                        end_status)
-                    )
-                elif len(keyword_matches) > 1 and any(
-                    [x for x in joined_list
-                                if x not in keyword_matches]):
-
-                    filtered_search_results.append((
-                        faved_sum,
-                        status.id_str,
-                        status.full_text)
-                    )
-                elif keyword_matches[0] not in Settings.watch_add_hashtag:
+                if any(
+                    [x for x in keyword_matches
+                                if x not in Settings.watch_add_hashtag]):
+                    print(keyword_matches, status.full_text)
 
                     filtered_search_results.append((
                         faved_sum,
