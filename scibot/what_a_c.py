@@ -366,14 +366,44 @@ def filter_tweet(search_results, twitter_api, flag):
 
         if len(end_status.split()) > 3 and faved_sum[2] > 1:
 
-            if [x
-                for x in Settings.add_hashtag + Settings.retweet_include_words #- ['trip'] # review behaviour of this function
-                if x in end_status.lower()]:
-                filtered_search_results.append((
-                    faved_sum,
-                    status.id_str,
-                    status.full_text)
-                )
+            joined_list = Settings.add_hashtag + Settings.retweet_include_words
+
+
+            # remove elements from the exclude words list
+            keyword_matches = [x for x in joined_list + Settings.watch_add_hashtag if
+                   x in end_status.lower() and
+                  not any([x for x in Settings.retweet_exclude_words
+                        if x in end_status.lower()])]
+
+            if keyword_matches:
+
+                if 'drug' in keyword_matches and len(keyword_matches)>1:
+    #                 print(first_match,end_status,first_match)
+                    filtered_search_results.append((
+                        faved_sum,
+                        status.id_str,
+                        end_status)
+                    )
+                elif len(keyword_matches) > 1 and any(
+                    [x for x in joined_list
+                                if x not in keyword_matches]):
+
+                    filtered_search_results.append((
+                        faved_sum,
+                        status.id_str,
+                        status.full_text)
+                    )
+                elif keyword_matches[0] not in Settings.watch_add_hashtag:
+
+                    filtered_search_results.append((
+                        faved_sum,
+                        status.id_str,
+                        status.full_text)
+                    )
+                else:
+                    logger.info(f">> skipped, {keyword_matches}, {end_status}")
+                    telegram_bot_sendtext(f"[not considered] id={status.id_str}: {status.full_text}")
+
 
     return sorted(filtered_search_results)
 

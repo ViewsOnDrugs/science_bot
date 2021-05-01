@@ -25,6 +25,7 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
+
 class Settings:
     """Twitter bot application settings.
 
@@ -81,19 +82,27 @@ class Settings:
     ]
 
     # Do not include tweets with these words when retweeting.
-    retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork", "fuck", "vaping", "vape", "cigarretes", "smoke", "smoking"]
+    retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork",
+                             "fuck", "vaping", "vape", "cigarretes", "nicotine",
+                             "smoke", "smoking", "zigaretten"]
 
-    add_hashtag = ['psilocybin', 'psilocybine', 'psychedelic', 'psychological',
-                   'hallucinogenic', 'therapy', 'psychiatry', 'dmt',
-                   'mentalhealth', 'mental health', 'alzheimer', 'depression', 'anxiety',
-                   'dopamine', 'serotonin', 'lsd', 'drug-policy', 'drugspolicy',
-                   'drugpolicy', 'drug policy', 'mdma', 'microdosing', 'drug', 'ayahuasca',
-                   'psychopharmacology', 'clinical trial', 'neurogenesis',
-                   'serotonergic', 'ketamine', 'consciousness', 'psychotherapy',
-                   'meta-analysis', 'trip', 'harm reduction'] #trip
+    add_hashtag = ['psilocybin', 'psilocybine', 'psychedelic',
+                   'hallucinogenic', 'overdose', 'microdosing',
+                    'drug-policy', 'drugspolicy', 'mdma',
+                   'drugpolicy', 'drug policy', 'ayahuasca',
+                   'psychopharmacology',  'neurogenesis', '5-meo-dmt',
+                   'serotonergic', 'ketamine',  'psychotherapy',
+                    'harm reduction', 'methadone'] #trip
+
+    watch_add_hashtag = ['cocaina', 'cocaine', 'alzheimer', 'depression', 'anxiety',
+                   'droga','coca','dmt', 'lsd','therapy', 'psychiatry', 'mentalhealth',
+                  'mental health', 'clinical trial', 'consciousness', 'drug', 'meta-analysis',
+                   'dopamine', 'serotonin', 'psychological', 'metaanalysis', 'reform']
+    
     ## list of the distribution
     mylist_id = "1306244304000749569"
     ## reosted error to ignore for the log.list
+
 
 
 
