@@ -183,7 +183,7 @@ def read_rss_and_tweet(url: str):
 
             if not is_in_logfile(link_id, Settings.posted_urls_output_file):
                 post_tweet(message=compose_message(item))
-                write_to_logfile(f"{link_id}", Settings.posted_urls_output_file)
+                write_to_logfile({f"{link_id}": None}, Settings.posted_urls_output_file)
                 logger.info(f"Posted:, {link_id}, {compose_message(item)}")
                 telegram_bot_sendtext(
                         f"Posted:, {link_id}, {compose_message(item)}"
@@ -251,7 +251,7 @@ def try_retweet(twitter_api, tweet_text, in_tweet_id, self_followers):
         try:
             twitter_api.retweet(id=tweet_id)
             logger.info(f"Trying to rt {tweet_id}")
-            write_to_logfile(in_tweet_id, Settings.posted_retweets_output_file)
+            write_to_logfile({in_tweet_id: None}, Settings.posted_retweets_output_file)
             _status=twitter_api.get_status(tweet_id)
             json_add_user(_status.author.id_str)
             if tweet_id == in_tweet_id:
@@ -265,7 +265,7 @@ def try_retweet(twitter_api, tweet_text, in_tweet_id, self_followers):
             return True
         except tweepy.TweepError as e:
             if e.api_code in Settings.IGNORE_ERRORS:
-                write_to_logfile(in_tweet_id, Settings.posted_retweets_output_file)
+                write_to_logfile({in_tweet_id: None}, Settings.posted_retweets_output_file)
                 logger.exception(e)
                 return False
             else:
@@ -409,7 +409,7 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
         try:
             time.sleep(randint(0,600))
             twitter_api.create_favorite(id=tweet_id)
-            write_to_logfile(in_tweet_id, Settings.faved_tweets_output_file)
+            write_to_logfile({in_tweet_id: None}, Settings.faved_tweets_output_file)
             _status=twitter_api.get_status(tweet_id)
             json_add_user(_status.author.id_str)
             message_log = "faved tweet succesful: https://twitter.com/i/status/{}".format(tweet_id)
@@ -420,7 +420,7 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
 
         except tweepy.TweepError as e:
             if e.api_code in Settings.IGNORE_ERRORS:
-                write_to_logfile(in_tweet_id, Settings.faved_tweets_output_file)
+                write_to_logfile({in_tweet_id: None}, Settings.faved_tweets_output_file)
                 logger.debug(f"throw a en error {e}")
                 logger.exception(e)
                 return False

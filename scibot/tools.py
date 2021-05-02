@@ -1,4 +1,5 @@
 import logging
+import json
 import re
 import os
 import time
@@ -183,26 +184,26 @@ def is_in_logfile(content: str, filename: str) -> bool:
         Returns `True` if content is found in file, otherwise `False`.
     """
     if os.path.isfile(filename):
-        with open(filename) as f:
-            lines = f.readlines()
-        if (str(content) + "\n" or content) in lines:
+        with open(filename, "r") as jsonFile:
+            article_log = json.load(jsonFile)
+        if content in article_log:
             return True
     return False
 
 
-def write_to_logfile(content: str, filename: str):
-    """Append content to log file, on one line.
+def write_to_logfile(content: dict, filename: str):
+    """Append content to json file.
 
     Parameters
     ----------
-    content: str
+    content: dic
         Content to append to file.
     filename: str
         Full path to file that should be appended.
     """
     try:
-        with open(filename, "a") as f:
-            f.write(content + "\n")
+        with open(filename, 'w') as fp:
+            json.dump(content, fp)
     except IOError as e:
         logger.exception(e)
 
