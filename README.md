@@ -2,15 +2,15 @@
 
 ## :cactus:
 
-A bot application made with `tweepy` tweeting scientific articles from a RSS feed and retweeting educated opinions from a manually curated distribution list.
+A bot application made with `tweepy` tweeting scientific articles from an RSS feed and retweeting educated opinions from a manually curated distribution list.
 
 ## What it does:
 
-* Reads and parses a list of RSS feeds. Tweets an article's title, link, abstract and authors as a /5 thread.
+* Reads and parses a list of RSS feeds. Tweets an article's title, link, abstract, and authors as a /5 thread.
 * Retweets older RSS post after a given time.
 * Retweets the most retweeted and up-voted post from:
-  - a globall search for specified keywords or hashtags defined on `Settings.add_hashtag`.
-  - a search result from a given distribution twitter list defined on `Settings.mylist_id`.
+  - a global search for specified keywords or hashtags defined on `Settings.add_hashtag`.
+  - a search result from a given distribution Twitter list defined on `Settings.mylist_id`.
 * Interacts with users by faving posts from the above.
 * Schedule jobs for any of the above.
 * Send automated debug reports via Telegram
@@ -63,7 +63,7 @@ $ scibot rto
 ```
 ### deploy:
 
-[Here](https://schedule.readthedocs.io/en/stable/) you can learn how set up tasks for the the `scheduled_job()` function
+[Here](https://schedule.readthedocs.io/en/stable/) you can learn how set-up tasks for the the `scheduled_job()` function
 
 There are some good free cloud solutions such as [pythonanywhere](https://www.pythonanywhere.com/), where you can deploy the bot,
 to do that just run:
