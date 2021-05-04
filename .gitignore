@@ -8,7 +8,7 @@ posted-*
 *.json
 venv/
 nohup.out
-scibot/__pycache__/
+*__pycache__/
 shared_drugsci_friends.csv
 user_friends.json
 .ipynb_checkpoints/
