@@ -6,6 +6,7 @@ import time
 import datetime
 import feedparser
 import dateutil.parser
+from os.path import expanduser
 from scibot.telebot import telegram_bot_sendtext
 from schedule import Scheduler
 
@@ -26,15 +27,16 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
-
 class Settings:
     """Twitter bot application settings.
 
     Enter the RSS feed you want to tweet, or keywords you want to retweet.
     """
+
     IGNORE_ERRORS = [327, 139]
     # RSS feeds to read and post tweets from.
-    feed_urls = ["https://pubmed.ncbi.nlm.nih.gov/rss/search/1VePQbT36PBuW-0vYWywv3PuF6BRnl6iwoIY8Ud6bo2ad7LQCq/?limit=50&utm_campaign=pubmed-2&fc=20210420053033",
+    feed_urls = [
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1VePQbT36PBuW-0vYWywv3PuF6BRnl6iwoIY8Ud6bo2ad7LQCq/?limit=50&utm_campaign=pubmed-2&fc=20210420053033",
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1HM5Uxfu7f2DxEmuq-aqm79Um6H97z55gW-utYd5e1Fq1Yngod/?limit=50&utm_campaign=pubmed-2&fc=20210420053153",
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1NSu_CQNBizlmYqaPvjt8_hPOGlOnPaTChO-SFWN36pp7ZkgSs/?limit=50&utm_campaign=pubmed-2&fc=20210420053222",
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1DK1DQN9MQ-BeubNAzIyke3Nq-hO8OkCvOE2oueFRGqqvy8gei/?limit=50&utm_campaign=pubmed-2&fc=20210420053342",
@@ -42,27 +44,26 @@ class Settings:
         "http://export.arxiv.org/api/query?search_query=all:psilocybin*&start=0&max_results=100&sortBy=lastUpdatedDate&sortOrder=descending",
     ]
 
-    pre_combined_feed = [feedparser.parse(url)['entries'] for url in feed_urls]
+    pre_combined_feed = [feedparser.parse(url)["entries"] for url in feed_urls]
 
     # (combined_feed)
 
     combined_feed = [item for feed in pre_combined_feed for item in feed]
-    combined_feed.sort(key=lambda x: dateutil.parser.parse(x['published']), reverse=True)
-
-
+    combined_feed.sort(
+        key=lambda x: dateutil.parser.parse(x["published"]), reverse=True
+    )
 
     # Log file to save all tweeted RSS links (one URL per line).
-    posted_urls_output_file = "/home/farcila/what_a_c/posted-urls.log"
+    posted_urls_output_file = expanduser("~/drugscibot/publications.json")
 
     # Log file to save all retweeted tweets (one tweetid per line).
-    posted_retweets_output_file = "/home/farcila/what_a_c/posted-retweets.log"
+    posted_retweets_output_file = expanduser("~/drugscibot/posted-retweets.log")
 
     # Log file to save all retweeted tweets (one tweetid per line).
-    faved_tweets_output_file = "/home/farcila/what_a_c/faved-tweets.log"
+    faved_tweets_output_file = expanduser("~/drugscibot/faved-tweets.log")
 
     # Log file to save followers list.
-    users_json_file = "/home/farcila/what_a_c/users.json"
-
+    users_json_file = expanduser("~/drugscibot/users.json")
 
     # Include tweets with these words when retweeting.
     retweet_include_words = [
@@ -83,28 +84,72 @@ class Settings:
     ]
 
     # Do not include tweets with these words when retweeting.
-    retweet_exclude_words = ["sex", "sexual", "sexwork", "sexualwork",
-                             "fuck", "vaping", "vape", "cigarretes", "nicotine",
-                             "smoke", "smoking", "zigaretten"]
+    retweet_exclude_words = [
+        "sex",
+        "sexual",
+        "sexwork",
+        "sexualwork",
+        "fuck",
+        "vaping",
+        "vape",
+        "cigarretes",
+        "nicotine",
+        "smoke",
+        "smoking",
+        "zigaretten",
+    ]
 
-    add_hashtag = ['psilocybin', 'psilocybine', 'psychedelic',
-                   'hallucinogenic', 'overdose', 'microdosing',
-                    'drug-policy', 'drugspolicy', 'mdma',
-                   'drugpolicy', 'drug policy', 'ayahuasca',
-                   'psychopharmacology',  'neurogenesis', '5-meo-dmt',
-                   'serotonergic', 'ketamine',  'psychotherapy',
-                    'harm reduction', 'methadone'] #trip
+    add_hashtag = [
+        "psilocybin",
+        "psilocybine",
+        "psychedelic",
+        "hallucinogenic",
+        "overdose",
+        "microdosing",
+        "drug-policy",
+        "drugspolicy",
+        "mdma",
+        "drugpolicy",
+        "drug policy",
+        "ayahuasca",
+        "psychopharmacology",
+        "neurogenesis",
+        "5-meo-dmt",
+        "serotonergic",
+        "ketamine",
+        "psychotherapy",
+        "harm reduction",
+        "methadone",
+    ]  # trip
 
-    watch_add_hashtag = ['cocaina', 'cocaine', 'alzheimer', 'depression', 'anxiety',
-                   'droga','coca','dmt', 'lsd','therapy', 'psychiatry', 'mentalhealth', 'trip',
-                  'mental health', 'clinical trial', 'consciousness', 'drug', 'meta-analysis',
-                   'dopamine', 'serotonin', 'psychological', 'metaanalysis', 'reform']
+    watch_add_hashtag = [
+        "cocaina",
+        "cocaine",
+        "alzheimer",
+        "depression",
+        "anxiety",
+        "droga",
+        "coca",
+        "dmt",
+        "lsd",
+        "therapy",
+        "psychiatry",
+        "mentalhealth",
+        "trip",
+        "mental health",
+        "clinical trial",
+        "consciousness",
+        "drug",
+        "meta-analysis",
+        "dopamine",
+        "serotonin",
+        "psychological",
+        "metaanalysis",
+        "reform",
+    ]
 
-    ## list of the distribution
+    # list of the distribution
     mylist_id = "1306244304000749569"
-    ## reosted error to ignore for the log.list
-
-
 
 
 class SafeScheduler(Scheduler):
@@ -135,11 +180,37 @@ class SafeScheduler(Scheduler):
             job.last_run = datetime.datetime.now()
             job._schedule_next_run()
 
-def insert_hash(string, index, strip=False):
-    if strip:
-        return string[:index] + "#" + string[index:].replace(' ', '', 1)
-    else:
-        return string[:index] + "#" + string[index:]
+
+def shorten_text(text: str, maxlength: int) -> str:
+    """Truncate text and append three dots (...) at the end if length exceeds
+    maxlength chars.
+
+    Parameters
+    ----------
+    text: str
+        The text you want to shorten.
+    maxlength: int
+        The maximum character length of the text string.
+
+    Returns
+    -------
+    str
+        Returns a shortened text string.
+    """
+    return (text[:maxlength] + "...") if len(text) > maxlength else text
+
+
+def insert_hashtag(title: str):
+
+    for x in Settings.add_hashtag:
+        if re.search(fr"\b{x}", title.lower()):
+            pos = (re.search(fr"\b{x}", title.lower())).start()
+            if " " in x:
+                title = title[:pos] + "#" + title[pos:].replace(" ", "", 1)
+            else:
+                title = title[:pos] + "#" + title[pos:]
+    return title
+
 
 def compose_message(item: feedparser.FeedParserDict) -> str:
     """Compose a tweet from an RSS item (title, link, description)
@@ -155,18 +226,11 @@ def compose_message(item: feedparser.FeedParserDict) -> str:
     str
         Returns a message suited for a Twitter status update.
     """
-    title = item["title"]
+    title = insert_hashtag(item["title"])
 
-    for x in Settings.add_hashtag:
-        if re.search(fr"\b{x}", title.lower()):
-            pos = (re.search(fr"\b{x}", title.lower())).start()
-            if " " in x:
-                title = insert_hash(title, pos, strip=True)
-            else:
-                title = insert_hash(title, pos)
-    link, _ = item["link"], item["description"]
-    message = shorten_text(title, maxlength=250) + " " + link
+    message = shorten_text(title, maxlength=250) + " 1/5  " + item["link"]
     return message
+
 
 def is_in_logfile(content: str, filename: str) -> bool:
     """Does the content exist on any line in the log file?
@@ -202,7 +266,7 @@ def write_to_logfile(content: dict, filename: str):
         Full path to file that should be appended.
     """
     try:
-        with open(filename, 'w') as fp:
+        with open(filename, "w") as fp:
             json.dump(content, fp)
     except IOError as e:
         logger.exception(e)
@@ -227,10 +291,8 @@ def shorten_text(text: str, maxlength: int) -> str:
     return (text[:maxlength] + "...") if len(text) > maxlength else text
 
 
-def scheduled_job(check_new_followers,read_rss_and_tweet,retweet_own,search_and_retweet):
+def scheduled_job(read_rss_and_tweet, retweet_own, search_and_retweet):
     schedule = SafeScheduler()
-    # job 0 check followers
-    schedule.every().day.at("00:20").do(check_new_followers)
     # job 1
     schedule.every().day.at("22:20").do(read_rss_and_tweet, url=Settings.combined_feed)
     schedule.every().day.at("06:20").do(read_rss_and_tweet, url=Settings.combined_feed)

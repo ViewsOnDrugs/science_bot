@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
+import json
 import os
 import sys
-import tweepy
 import time
-from random import randint
-from scibot.telebot import telegram_bot_sendtext
-import json
-from scibot.tools import (logger, Settings,
-shorten_text, compose_message, is_in_logfile, write_to_logfile, scheduled_job)
 from os.path import expanduser
+from random import randint
+
+import tweepy
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+
+from scibot.telebot import telegram_bot_sendtext
+from scibot.tools import (
+    logger,
+    Settings,
+    insert_hashtag,
+    shorten_text,
+    compose_message,
+    is_in_logfile,
+    write_to_logfile,
+    scheduled_job,
+)
 
 env_path = expanduser("~/.env")
 load_dotenv(dotenv_path=env_path)
-
 
 
 def main():
@@ -21,8 +31,22 @@ def main():
     logger.info("\n### sciBot started ###\n\n")
     if len(sys.argv) > 1:
         try:
+            check_json_exists(
+                Settings.users_json_file,
+                {"test": {"follower": False, "interactions": 0}},
+            )
+            check_json_exists(Settings.faved_tweets_output_file, {"test": {}})
+            check_json_exists(
+                Settings.posted_retweets_output_file,
+                {"test": {"follower": False, "interactions": 0}},
+            )
+            check_json_exists(
+                Settings.posted_urls_output_file,
+                {"test": {"follower": False, "interactions": 0}},
+            )
+
             if sys.argv[1].lower() == "rss":
-                read_rss_and_tweet(url=Settings.combined_feed)
+                read_rss_and_tweet(Settings.combined_feed)
             elif sys.argv[1].lower() == "rtg":
                 search_and_retweet("global_search")
             elif sys.argv[1].lower() == "glv":
@@ -30,11 +54,9 @@ def main():
             elif sys.argv[1].lower() == "rtl":
                 search_and_retweet("list_search")
             elif sys.argv[1].lower() == "rto":
-                retweet_own()
-            elif sys.argv[1].lower() == "cnf":
-                check_new_followers()
+                retweet_old_own()
             elif sys.argv[1].lower() == "sch":
-                scheduled_job(check_new_followers, read_rss_and_tweet, retweet_own, search_and_retweet)
+                scheduled_job(read_rss_and_tweet, retweet_old_own, search_and_retweet)
 
         except Exception as e:
             logger.exception(e, exc_info=True)
@@ -44,7 +66,6 @@ def main():
             logger.exception(f"[ERROR] {errno}")
             telegram_bot_sendtext(f"[ERROR] {errno}")
 
-
     else:
         display_help()
     logger.info("\n\n### sciBot finished ###")
@@ -52,6 +73,11 @@ def main():
 
 # Setup API:
 def twitter_setup():
+    """
+
+    Returns:
+
+    """
     # Authenticate and access using keys:
     auth = tweepy.OAuthHandler(os.getenv("CONSUMER_KEY"), os.getenv("CONSUMER_SECRET"))
     auth.set_access_token(os.getenv("ACCESS_TOKEN"), os.getenv("ACCESS_SECRET"))
@@ -61,51 +87,161 @@ def twitter_setup():
     return api
 
 
-def get_followers_list(): #todo change to read_followers_json
-    """Get list of followers from last check in
+def check_json_exists(file_path: os.path, init_dict: dict):
+    """
 
-    Parameters
-    ----------
-    filename: str
-        Full path to file to search.
+    Args:
+        file_path:
+        init_dict:
 
-    Returns
-    -------
-    list
-        Returns list of self followers.
+    Returns:
+
+    """
+    if not os.path.isfile(file_path):
+        with open(file_path, "w") as json_file:
+            json.dump(init_dict, json_file, indent=4)
+
+
+def get_followers_list():  # todo change to read_followers_json
+    """
+
+    Returns:
+
     """
 
     with open(Settings.users_json_file, "r") as json_file:
         users_dic = json.load(json_file)
-    return[x for x in users_dic if users_dic[x]['follower']==True]
+    return [x for x in users_dic if users_dic[x]["follower"] is True]
+
+
+def update_thread(text: str, tweet, api):
+    """
+
+    Args:
+        text:
+        tweet:
+        api:
+
+    Returns:
+
+    """
+    return api.update_status(
+        status=text, in_reply_to_status_id=tweet.id, auto_populate_reply_metadata=True
+    )
+
+
+def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
+    """
+    Args:
+        dict_one_pub:
+        maxlength:
+        count:
+
+    """
+    api = twitter_setup()
+    original_tweet = api.update_status(status=compose_message(dict_one_pub))
+    telegram_bot_sendtext(f"Posting thread:, twitter.com/i/status/{original_tweet.id}")
+
+    text = dict_one_pub["abstract"]
+
+    for index in range(0, len(text), maxlength):
+        if count < 4:
+            count += 1
+            time.sleep(2)
+            thread_message = (
+                insert_hashtag(text[index: index + maxlength]) + f"... {count}/5"
+            )
+            if count == 2:
+                reply1_tweet = update_thread(thread_message, original_tweet, api)
+            if count == 3:
+                reply2_tweet = update_thread(thread_message, reply1_tweet, api)
+            if count == 4:
+                reply3_tweet = update_thread(thread_message, reply2_tweet, api)
+
+    time.sleep(2)
+    count += 1
+    last_msg = shorten_text(dict_one_pub["author-s"][0], 250) + f" {count}/{count}"
+
+    update_thread(last_msg, reply3_tweet, api)
+
+    return original_tweet.id
+
+
+def make_literature_dict(feed):
+    """
+
+    Args:
+        feed:
+
+    Returns:
+
+    """
+
+    dict_publications = {}
+
+    for item in feed:
+        if hasattr(item, "content"):
+            dict_publications[item.id] = {
+                "title": item.title,
+                "abstract": "Abstract: "
+                + BeautifulSoup(item.content[0].value, "html.parser")
+                .get_text()
+                .split("ABSTRACT")[1],
+                "link": item.link,
+                "description": item.description,
+                "author-s": [
+                    "Authors: " + ", ".join([x["name"] for x in item.authors]),
+                    "Author: " + item.author,
+                ],
+            }
+    return dict_publications
+
+
+def read_rss_and_tweet(feed):
+    """
+
+    Args:
+        feed:
+
+    Returns:
+
+    """
+    dict_publications = make_literature_dict(feed)
+
+    with open(Settings.posted_urls_output_file, "r") as jsonFile:
+        article_log = json.load(jsonFile)
+
+    for article in dict_publications:
+
+        if not is_in_logfile(article, Settings.posted_urls_output_file):
+            try:
+                article_log[article] = {
+                    "count": 0,
+                    "tweet_id": post_thread(dict_publications[article], 270),
+                }
+
+            except tweepy.TweepError as e:
+
+                print(e, dict_publications[article]["title"])
+                continue
+
+            break
+
+        write_to_logfile(article_log, Settings.posted_urls_output_file)
 
 
 def json_add_new_friend(user_id):
     """add user friends to the interactions json file"""
+
     with open(Settings.users_json_file, "r") as json_file:
         users_dic = json.load(json_file)
-    if not user_id in users_dic:
-        users_dic[user_id]={'follower': True, 'interactions': 1}
-    else: users_dic[user_id]['follower'] = True
+    if user_id not in users_dic:
+        users_dic[user_id] = {"follower": True, "interactions": 1}
+    else:
+        users_dic[user_id]["follower"] = True
 
     with open(Settings.users_json_file, "w") as json_file:
         json.dump(users_dic, json_file, indent=4)
-
-def check_new_followers():
-
-    twitter_api = twitter_setup()
-
-    new_folks=[]
-    for x  in twitter_api.followers(count=100):
-        if x.id_str not in get_followers_list():
-            print(x.id_str)
-            new_folks.append(f"https://twitter.com/{x.screen_name}")
-            json_add_new_friend(x.id_str)
-    if new_folks:
-        telegram_bot_sendtext("New folks of the day: {}".format('\n'.join(new_folks)))
-    else:
-        telegram_bot_sendtext("""No new friends since last check
-        :'(""")
 
 
 def post_tweet(message: str):
@@ -123,99 +259,71 @@ def post_tweet(message: str):
     except tweepy.TweepError as e:
         logger.error(e)
 
+
 def filter_repeated_tweets(result_search, flag):
 
-    """Filter out repeated tweets.
+    """
 
-    Parameters
-    ----------
-    result_search: list
-        Api search result.
+    Args:
+        result_search:
+        flag:
+
+    Returns:
+
     """
 
     if flag == "give_love":
-        out_file= Settings.faved_tweets_output_file
-    else: out_file = Settings.posted_retweets_output_file
+        out_file = Settings.faved_tweets_output_file
+    else:
+        out_file = Settings.posted_retweets_output_file
 
-
-    unique_results={}
+    unique_results = {}
 
     for status in result_search:
-        if hasattr(status,"retweeted_status"):
+        if hasattr(status, "retweeted_status"):
             check_id = status.retweeted_status.id_str
         else:
             check_id = status.id_str
 
         if not is_in_logfile(check_id, out_file):
-            unique_results[status.full_text]=status
+            unique_results[status.full_text] = status
 
-    return[unique_results[x] for x in unique_results]
+    return [unique_results[x] for x in unique_results]
+
 
 def json_add_user(user_id):
-    """add user to the interactions json file"""
+    """
+    add user to the interactions json file
+    Args:
+        user_id: user id
+
+    Returns: None
+
+    """
     with open(Settings.users_json_file, "r") as json_file:
         users_dic = json.load(json_file)
-    if not user_id in users_dic:
-        users_dic[user_id]={'follower': False, 'interactions': 1}
+    if user_id not in users_dic:
+        users_dic[user_id] = {"follower": False, "interactions": 1}
     else:
-        users_dic[user_id]['interactions']+=1
+        users_dic[user_id]["interactions"] += 1
 
     with open(Settings.users_json_file, "w") as json_file:
         json.dump(users_dic, json_file, indent=4)
 
-def read_rss_and_tweet(url: str):
-    """Read RSS and post feed items as a tweet.
-
-    Parameters
-    ----------
-    url: str
-        URL to RSS feed.
-    """
-    feed = url
-    count = 0
-
-    if feed:
-        print(len(feed))
-#         for feed in feeds:
-        while count in range(0, len(feed)):
-            item = feed[count]
-            link_id = item.id
-
-            if not is_in_logfile(link_id, Settings.posted_urls_output_file):
-                post_tweet(message=compose_message(item))
-                write_to_logfile({f"{link_id}": None}, Settings.posted_urls_output_file)
-                logger.info(f"Posted:, {link_id}, {compose_message(item)}")
-                telegram_bot_sendtext(
-                        f"Posted:, {link_id}, {compose_message(item)}"
-                    )
-                break
-            elif count < len(feed)-1:
-                logger.debug(f"count {count}, Already posted: https://twitter.com/i/status/{link_id} Trying next")
-                count += 1
-
-            else:
-                logger.info(f"trimming file{count}, {len(feed)}")
-                telegram_bot_sendtext("trimming file{count}, {len(feed)}")
-                trim_logfile(Settings.posted_urls_output_file)
-
-
-    else:
-        logger.info(f"Nothing found in feed:{url} ")
-
 
 def get_query() -> str:
-    """Create Twitter search query with included words minus the
+    """
+    Create Twitter search query with included words minus the
     excluded words.
 
-    Returns
-    -------
-    str
-        Returns a string with the Twitter search query.
+    Returns:  string with the Twitter search query
+
     """
     include = " OR ".join(Settings.retweet_include_words)
     exclude = " -".join(Settings.retweet_exclude_words)
     exclude = "-" + exclude if exclude else ""
     return include + " " + exclude
+
 
 def check_interactions(tweet):
     """
@@ -224,16 +332,20 @@ def check_interactions(tweet):
     if tweet.author.screen_name.lower() == "drugscibot":
         pass  # don't fav your self
 
-    auth_id=tweet.author.id_str
+    auth_id = tweet.author.id_str
     with open(Settings.users_json_file, "r") as json_file:
         users_dic = json.load(json_file)
 
-        user_list = [users_dic[x]["interactions"] for x in users_dic if users_dic[x]["follower"]==False]
+        user_list = [
+            users_dic[x]["interactions"]
+            for x in users_dic
+            if users_dic[x]["follower"] == False
+        ]
 
-        down_limit=round(sum(user_list)/len(user_list))
+        down_limit = round(sum(user_list) / len(user_list))
 
         if auth_id in users_dic:
-            if users_dic[auth_id]['interactions'] >= down_limit:
+            if users_dic[auth_id]["interactions"] >= down_limit:
                 return True
             else:
                 return False
@@ -251,21 +363,26 @@ def try_retweet(twitter_api, tweet_text, in_tweet_id, self_followers):
         try:
             twitter_api.retweet(id=tweet_id)
             logger.info(f"Trying to rt {tweet_id}")
-            write_to_logfile({in_tweet_id: None}, Settings.posted_retweets_output_file)
-            _status=twitter_api.get_status(tweet_id)
+            write_to_logfile({in_tweet_id: {}}, Settings.posted_retweets_output_file)
+            _status = twitter_api.get_status(tweet_id)
             json_add_user(_status.author.id_str)
             if tweet_id == in_tweet_id:
-                id_mess=f"{tweet_id} original"
-            else: id_mess=f"{tweet_id} from a nested profile"
-            message_log = "Retweeted and saved to file >  https://twitter.com/i/status/{}".format(
-                id_mess
+                id_mess = f"{tweet_id} original"
+            else:
+                id_mess = f"{tweet_id} from a nested profile"
+            message_log = (
+                "Retweeted and saved to file >  https://twitter.com/i/status/{}".format(
+                    id_mess
+                )
             )
             logger.info(message_log)
             telegram_bot_sendtext(message_log)
             return True
         except tweepy.TweepError as e:
             if e.api_code in Settings.IGNORE_ERRORS:
-                write_to_logfile({in_tweet_id: None}, Settings.posted_retweets_output_file)
+                write_to_logfile(
+                    {in_tweet_id: {}}, Settings.posted_retweets_output_file
+                )
                 logger.exception(e)
                 return False
             else:
@@ -286,7 +403,6 @@ def get_longest_text(status):
         return status.full_text
 
 
-
 def find_simple_users(twitter_api, tweet_id, followers_list):
 
     """
@@ -300,16 +416,17 @@ def find_simple_users(twitter_api, tweet_id, followers_list):
     else:
         retweeters = twitter_api.retweets(tweet_id)
 
-
     future_friends = []
     for retweet in retweeters:
 
-        if  check_interactions(retweet):
+        if check_interactions(retweet):
             continue
         try:
-            follows_friends_ratio = retweet.author.followers_count / retweet.author.friends_count
+            follows_friends_ratio = (
+                retweet.author.followers_count / retweet.author.friends_count
+            )
         except ZeroDivisionError:
-             follows_friends_ratio=0
+            follows_friends_ratio = 0
 
         future_friends_dic = {
             "id_str": retweet.author.id_str,
@@ -319,18 +436,21 @@ def find_simple_users(twitter_api, tweet_id, followers_list):
         }
         if future_friends_dic["friends"] > future_friends_dic["followers"]:
             future_friends.append(
-                (future_friends_dic["follows_friends_ratio"],
+                (
+                    future_friends_dic["follows_friends_ratio"],
                     retweet.id_str,
-                    future_friends_dic)
+                    future_friends_dic,
+                )
             )
         else:
             future_friends.append(
                 (future_friends_dic["followers"], retweet.id_str, future_friends_dic)
             )
     if future_friends:
-        try: # give prioroty to non followers of self
-            min_friend = min([x for x in future_friends
-                              if x[2]['id_str'] not in followers_list])
+        try:  # give prioroty to non followers of self
+            min_friend = min(
+                [x for x in future_friends if x[2]["id_str"] not in followers_list]
+            )
             logger.info(
                 f"try retweeting/fav https://twitter.com/i/status/{min_friend[1]} from potential friend profile: {min_friend[2]['id_str']} friends= {min_friend[2]['friends']}, followrs={min_friend[2]['followers']}"
             )
@@ -342,19 +462,26 @@ def find_simple_users(twitter_api, tweet_id, followers_list):
             )
             return min_friend[1]
     else:
-        logger.info(f"try retweeting from original post: https://twitter.com/i/status/{tweet_id}")
+        logger.info(
+            f"try retweeting from original post: https://twitter.com/i/status/{tweet_id}"
+        )
         return tweet_id
+
 
 def filter_tweet(search_results, twitter_api, flag):
     """
     function to ensure that retweets are on-topic
     by the hashtag list
     """
-    filtered_search_results=[]
+    filtered_search_results = []
 
     for status in search_results:
 
-        faved_sum=(status.retweet_count, status.favorite_count, status.retweet_count + status.favorite_count)
+        faved_sum = (
+            status.retweet_count,
+            status.favorite_count,
+            status.retweet_count + status.favorite_count,
+        )
 
         if status.is_quote_status:
             quoted_tweet = twitter_api.get_status(
@@ -368,29 +495,35 @@ def filter_tweet(search_results, twitter_api, flag):
 
             joined_list = Settings.add_hashtag + Settings.retweet_include_words
 
-
             # remove elements from the exclude words list
-            keyword_matches = [x for x in joined_list + Settings.watch_add_hashtag if
-                   x in end_status.lower() and
-                  not any([x for x in Settings.retweet_exclude_words
-                        if x in end_status.lower()])]
+            keyword_matches = [
+                x
+                for x in joined_list + Settings.watch_add_hashtag
+                if x in end_status.lower()
+                and not any(
+                    [
+                        x
+                        for x in Settings.retweet_exclude_words
+                        if x in end_status.lower()
+                    ]
+                )
+            ]
 
             if keyword_matches:
 
                 if any(
-                    [x for x in keyword_matches
-                                if x not in Settings.watch_add_hashtag]):
+                    [x for x in keyword_matches if x not in Settings.watch_add_hashtag]
+                ):
                     print(keyword_matches, status.full_text)
 
-                    filtered_search_results.append((
-                        faved_sum,
-                        status.id_str,
-                        status.full_text)
+                    filtered_search_results.append(
+                        (faved_sum, status.id_str, status.full_text)
                     )
                 else:
                     logger.info(f">> skipped, {keyword_matches}, {end_status}")
-                    telegram_bot_sendtext(f"[not considered] id={status.id_str}: {status.full_text}")
-
+                    telegram_bot_sendtext(
+                        f"[not considered] id={status.id_str}: {status.full_text}"
+                    )
 
     return sorted(filtered_search_results)
 
@@ -399,20 +532,21 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
     """try to favorite a post from simple users"""
     # todo add flag to use sleep or fav immediately
 
-
     tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers)
 
-    if (
-        not is_in_logfile(in_tweet_id, Settings.faved_tweets_output_file)
-    ):
+    if not is_in_logfile(in_tweet_id, Settings.faved_tweets_output_file):
 
         try:
-            time.sleep(randint(0,600))
+            time.sleep(randint(0, 600))
             twitter_api.create_favorite(id=tweet_id)
-            write_to_logfile({in_tweet_id: None}, Settings.faved_tweets_output_file)
-            _status=twitter_api.get_status(tweet_id)
+            write_to_logfile({in_tweet_id: {}}, Settings.faved_tweets_output_file)
+            _status = twitter_api.get_status(tweet_id)
             json_add_user(_status.author.id_str)
-            message_log = "faved tweet succesful: https://twitter.com/i/status/{}".format(tweet_id)
+            message_log = (
+                "faved tweet succesful: https://twitter.com/i/status/{}".format(
+                    tweet_id
+                )
+            )
             logger.info(message_log)
             telegram_bot_sendtext(message_log)
 
@@ -420,7 +554,7 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
 
         except tweepy.TweepError as e:
             if e.api_code in Settings.IGNORE_ERRORS:
-                write_to_logfile({in_tweet_id: None}, Settings.faved_tweets_output_file)
+                write_to_logfile({in_tweet_id: {}}, Settings.faved_tweets_output_file)
                 logger.debug(f"throw a en error {e}")
                 logger.exception(e)
                 return False
@@ -431,11 +565,12 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
     else:
         logger.info("Already faved (id {})".format(tweet_id))
 
+
 def fav_or_tweet(max_val, flag, twitter_api):
 
-    self_followers=get_followers_list()
+    self_followers = get_followers_list()
 
-    count=0
+    count = 0
 
     """
     use a tweet or a fav function depending on the flag called
@@ -452,7 +587,9 @@ def fav_or_tweet(max_val, flag, twitter_api):
             log_message = "fav"
 
         else:
-            use_function = try_retweet(twitter_api, tweet_text, tweet_id, self_followers)
+            use_function = try_retweet(
+                twitter_api, tweet_text, tweet_id, self_followers
+            )
             log_message = "retweet"
 
         if use_function:
@@ -462,21 +599,22 @@ def fav_or_tweet(max_val, flag, twitter_api):
             count += 1
             time.sleep(2)
             if count >= len(max_val):
-                logger.debug(f"no more tweets to post")
+                logger.debug("no more tweets to post")
             continue
 
 
-def search_and_retweet(flag="global_search", count=40):
-    """Search for a query in tweets, and retweet those tweets.
+def search_and_retweet(flag: str = "global_search", count: int = 40):
+    """
+    Search for a query in tweets, and retweet those tweets.
 
-    Parameters
-    ----------
-    flag: str
-        A query to search for on Twitter. it can be `global_search` to search globally
+    Args:
+        flag: A query to search for on Twitter. it can be `global_search` to search globally
         or `list_search` reduced to a list defined on mylist_id
-    count: int
-        Number of tweets to search for. You should probably keep this low
-        when you use search_and_retweet() on a schedule (e.g. cronjob).
+        count: Number of tweets to search for. You should probably keep this low
+        when you use search_and_retweet() on a schedule (e.g. cronjob)
+
+    Returns: None
+
     """
 
     try:
@@ -494,8 +632,8 @@ def search_and_retweet(flag="global_search", count=40):
 
         else:
             search_results = twitter_api.list_timeline(
-                list_id=Settings.mylist_id, count=count, tweet_mode="extended") + twitter_api.search(
-                q=get_query(), count=count, tweet_mode="extended")
+                list_id=Settings.mylist_id, count=count, tweet_mode="extended"
+            ) + twitter_api.search(q=get_query(), count=count, tweet_mode="extended")
 
     except tweepy.TweepError as e:
         logger.exception(e.reason)
@@ -503,58 +641,76 @@ def search_and_retweet(flag="global_search", count=40):
         return
 
     ## get the most faved + rtweeted and retweet it
-    max_val = filter_tweet(filter_repeated_tweets(search_results, flag),twitter_api, flag)
+    max_val = filter_tweet(
+        filter_repeated_tweets(search_results, flag), twitter_api, flag
+    )
 
     fav_or_tweet(max_val, flag, twitter_api)
 
-def trim_logfile(filename: str):
-    """Trim RSS file when it has reached the end, on one line.
 
-    Parameters
-    ----------
-    filename: str
-        Full path to file that should be trimmed.
-    """
-    try:
-        with open(filename, "r") as f:
-            lines = f.readlines()
-            trimmed=lines[:(round(len(lines)/2))]
-            print(len(lines))
-            print(len(lines)/2)
-
-
-        with open(filename, "w") as f:
-            f.write("".join(trimmed))
-    except IOError as e:
-        logger.exception(e)
-
-def retweet_own():
+def retweet(tweet):
     """
     re-tweet self last tweetet message.
+    Args:
+        tweet: tweet object
+
+    Returns: None
+
     """
 
     try:
-
         twitter_api = twitter_setup()
-        own_tweets = twitter_api.user_timeline(id=twitter_api, count=10)
-        to_retweet=[t for t in own_tweets if not t.retweeted][0]
 
-        if to_retweet:
-            twitter_api.retweet(to_retweet.id_str)
-            logger.info(f"retweeted: {to_retweet.text}")
-            telegram_bot_sendtext(f"Self retweeted: twitter.com/i/status/{to_retweet.id_str}")
+        if not tweet.retweeted:
+            twitter_api.retweet(id=tweet.id)
+            logger.info(f"retweeted: twitter.com/i/status/{tweet.id}")
+            telegram_bot_sendtext(f"Self retweeted: twitter.com/i/status/{tweet.id}")
 
         else:
-            logger.info("No more own tweets to retweet")
-
+            twitter_api.unretweet(tweet.id)
+            twitter_api.retweet(tweet.id)
+            telegram_bot_sendtext(f"Self re-retweeted: twitter.com/i/status/{tweet.id}")
 
     except tweepy.TweepError as e:
         logger.exception(e)
         telegram_bot_sendtext(f"ERROR :{e}")
 
 
+def retweet_old_own():
+    """
+
+    Returns: None
+
+    """
+
+    twitter_api = twitter_setup()
+
+    with open(Settings.posted_urls_output_file, "r") as jsonFile:
+        article_log = json.load(jsonFile)
+
+    min_val = min(article_log[x]["count"] for x in article_log)
+
+    for art in list(article_log)[::-1]:
+        print(article_log[art]["tweet_id"])
+        tweet = twitter_api.statuses_lookup([article_log[art]["tweet_id"]])[0]
+        if tweet and article_log[art]["count"] <= min_val:
+            retweet(tweet)
+            article_log[art]["count"] += 1
+            article_log[art]["rt"] = True
+
+            break
+
+    with open(Settings.posted_urls_output_file, "w") as fp:
+        json.dump(article_log, fp)
+
+
 def display_help():
-    """Show available commands."""
+    """
+    Show available commands.
+
+    Returns:
+
+    """
     print("Syntax: python {} [command]".format(sys.argv[0]))
     print()
     print(" Commands:")

@@ -12,12 +12,15 @@ def telegram_bot_sendtext(bot_message):
     token = os.getenv("API_TOKEN")
     bot_id = os.getenv("BOT_ID")
 
-    send_text = 'https://api.telegram.org/bot' + token + '/sendMessage?chat_id=' + bot_id + '&parse_mode=Markdown&text=' + bot_message
+    send_text = (
+        "https://api.telegram.org/bot"
+        + token
+        + "/sendMessage?chat_id="
+        + bot_id
+        + "&parse_mode=Markdown&text="
+        + bot_message
+    )
 
     response = requests.get(send_text)
 
     return response.json()
-
-
-
-
