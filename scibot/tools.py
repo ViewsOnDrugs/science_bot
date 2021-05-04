@@ -122,6 +122,7 @@ class Settings:
         "methadone",
     ]  # trip
 
+    # do not retweet if search result includes only any of this keywords alone
     watch_add_hashtag = [
         "cocaina",
         "cocaine",
