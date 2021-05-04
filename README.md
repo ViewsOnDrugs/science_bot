@@ -1,6 +1,6 @@
 
 
-# .<img src="https://pbs.twimg.com/profile_images/1389586842576637953/N9w-KzF0_400x400.png" alt="drawing" width="50"/> DrugSciBot <img src="https://pbs.twimg.com/profile_images/1389587065956884480/flZk4xVe_400x400.png" alt="drawing" width="50"/>
+# .<img src="https://pbs.twimg.com/profile_images/1389586842576637953/N9w-KzF0_400x400.png" alt="drawing" width="50"/> [DrugSciBot](https://twitter.com/drugSciBot/) <img src="https://pbs.twimg.com/profile_images/1389587065956884480/flZk4xVe_400x400.png" alt="drawing" width="50"/>
 
 A bot application made with `tweepy` tweeting scientific articles from an RSS feed and retweeting educated opinions from a manually curated distribution list.
 
