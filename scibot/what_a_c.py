@@ -38,11 +38,11 @@ def main():
             check_json_exists(Settings.faved_tweets_output_file, {"test": {}})
             check_json_exists(
                 Settings.posted_retweets_output_file,
-                {"test": {"follower": False, "interactions": 0}},
+                {"test": {}},
             )
             check_json_exists(
                 Settings.posted_urls_output_file,
-                {"test": {"follower": False, "interactions": 0}},
+                {"test": {}},
             )
 
             if sys.argv[1].lower() == "rss":
