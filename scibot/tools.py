@@ -267,7 +267,7 @@ def write_to_logfile(content: dict, filename: str):
     """
     try:
         with open(filename, "w") as fp:
-            json.dump(content, fp)
+            json.dump(content, fp, indent=4)
     except IOError as e:
         logger.exception(e)
 

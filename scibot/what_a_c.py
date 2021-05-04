@@ -701,7 +701,7 @@ def retweet_old_own():
             break
 
     with open(Settings.posted_urls_output_file, "w") as fp:
-        json.dump(article_log, fp)
+        json.dump(article_log, fp, indent=4)
 
 
 def display_help():
