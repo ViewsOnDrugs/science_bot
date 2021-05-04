@@ -25,7 +25,7 @@ All functions can be used independently.
     - `cd scibot`
     - `pip install . --user`
 2. Create a [Twitter application](https://apps.twitter.com/), and generate keys, tokens etc.
-3. Create a [Telegram bot](https://python-telegram-bot.readthedocs.io/en/stable/) for post and debugging notification
+3. Create a [Telegram bot](https://python-telegram-bot.readthedocs.io/en/stable/) for post and debugging notifications.
 4. Modify the settings in the source code.
     - Modify `feed_urls` list to add the RSS feeds of your choice. [Here](https://github.com/roblanf/phypapers) you can find a description on how to set an RSS search.
     - Modify the variables in the `example.env` file and add keys, tokens etc. for connecting to your Twitter app and save it as `.env` in your home directory.
