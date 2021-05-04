@@ -13,7 +13,7 @@ A bot application made with `tweepy` tweeting scientific articles from an RSS fe
   - a search result from a given distribution Twitter list defined on `Settings.mylist_id`.
 * Interacts with users by faving posts from the above.
 * Schedule jobs for any of the above.
-* Send automated debug reports via Telegram
+* Send automated debug reports via Telegram.
 
 All functions can be used independently.
 
@@ -61,7 +61,7 @@ Retweet last own tweet:
 ```bash
 $ scibot rto
 ```
-### deploy:
+### Deploy:
 
 [Here](https://schedule.readthedocs.io/en/stable/) you can learn how set-up tasks for the the `scheduled_job()` function
 
