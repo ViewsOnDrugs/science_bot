@@ -216,7 +216,7 @@ def read_rss_and_tweet(feed):
         if not is_in_logfile(article, Settings.posted_urls_output_file):
             try:
                 article_log[article] = {
-                    "count": 0,
+                    "count": 1,
                     "tweet_id": post_thread(dict_publications[article], 270),
                 }
 
