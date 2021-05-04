@@ -711,6 +711,7 @@ def display_help():
     Returns:
 
     """
+
     print("Syntax: python {} [command]".format(sys.argv[0]))
     print()
     print(" Commands:")
@@ -724,4 +725,6 @@ def display_help():
 
 
 if __name__ == "__main__":
+
     main()
+
