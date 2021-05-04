@@ -1,12 +1,12 @@
-#  DrugSciBot
 
-## :cactus:
+
+# .<img src="https://pbs.twimg.com/profile_images/1389586842576637953/N9w-KzF0_400x400.png" alt="drawing" width="50"/> DrugSciBot <img src="https://pbs.twimg.com/profile_images/1389587065956884480/flZk4xVe_400x400.png" alt="drawing" width="50"/>
 
 A bot application made with `tweepy` tweeting scientific articles from an RSS feed and retweeting educated opinions from a manually curated distribution list.
 
 ## What it does:
 
-* Reads and parses a list of RSS feeds. Tweets an article's title, link, abstract, and authors as a /5 thread.
+* Reads and parses a list of RSS feeds. Tweets an article's title, link, abstract, and authors as a 5/5 :thread:.
 * Retweets older RSS post after a given time.
 * Retweets the most retweeted and up-voted post from:
   - a global search for specified keywords or hashtags defined on `Settings.add_hashtag`.
