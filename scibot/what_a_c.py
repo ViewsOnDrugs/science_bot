@@ -27,6 +27,10 @@ load_dotenv(dotenv_path=env_path)
 
 
 def main():
+    """
+    Main function of scibot
+
+    """
 
     logger.info("\n### sciBot started ###\n\n")
     if len(sys.argv) > 1:
@@ -46,7 +50,7 @@ def main():
             )
 
             if sys.argv[1].lower() == "rss":
-                read_rss_and_tweet(Settings.combined_feed)
+                read_rss_and_tweet()
             elif sys.argv[1].lower() == "rtg":
                 search_and_retweet("global_search")
             elif sys.argv[1].lower() == "glv":
@@ -74,8 +78,8 @@ def main():
 # Setup API:
 def twitter_setup():
     """
-
-    Returns:
+    Setup Twitter connection for a developer account
+    Returns: tweepy.API object
 
     """
     # Authenticate and access using keys:
@@ -87,25 +91,31 @@ def twitter_setup():
     return api
 
 
-def check_json_exists(file_path: os.path, init_dict: dict):
+def check_json_exists(file_path: os.path, init_dict: dict) -> None:
     """
+
+    Create a folder and json file if does not exists
 
     Args:
-        file_path:
-        init_dict:
+        file_path: Log files file path
+        init_dict: Dictionary to initiate a json file
 
-    Returns:
+    Returns: None
 
     """
+
+    if not os.path.exists(os.path.dirname(os.path.abspath(file_path))):
+        os.makedirs(file_path)
+
     if not os.path.isfile(file_path):
         with open(file_path, "w") as json_file:
             json.dump(init_dict, json_file, indent=4)
 
 
-def get_followers_list():  # todo change to read_followers_json
+def get_followers_list() -> list:
     """
-
-    Returns:
+    Read json file of followers from Settings.users_json_file
+    Returns: List of followers
 
     """
 
@@ -114,15 +124,15 @@ def get_followers_list():  # todo change to read_followers_json
     return [x for x in users_dic if users_dic[x]["follower"] is True]
 
 
-def update_thread(text: str, tweet, api):
+def update_thread(text: str, tweet: tweepy.Status, api: tweepy.API) -> tweepy.Status:
     """
-
+    Add a tweet to a initiated thread
     Args:
-        text:
-        tweet:
-        api:
+        text: text to add to tweet as thread
+        tweet: tweepy status to add reply to
+        api: tweepy.API object
 
-    Returns:
+    Returns: post a reply to a tweet
 
     """
     return api.update_status(
@@ -132,10 +142,13 @@ def update_thread(text: str, tweet, api):
 
 def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
     """
+    Initiate and post a thread of tweets
     Args:
-        dict_one_pub:
-        maxlength:
-        count:
+        dict_one_pub: dictionary object with processed publication item
+        maxlength: length of the message to post (max tweet is 280 char)
+        count: count of replies on the thread
+
+    Returns: tweet id of the first tweet of thread
 
     """
     api = twitter_setup()
@@ -149,7 +162,7 @@ def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
             count += 1
             time.sleep(2)
             thread_message = (
-                insert_hashtag(text[index: index + maxlength]) + f"... {count}/5"
+                insert_hashtag(text[index : index + maxlength]) + f"... {count}/5"
             )
             if count == 2:
                 reply1_tweet = update_thread(thread_message, original_tweet, api)
@@ -167,13 +180,13 @@ def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
     return original_tweet.id
 
 
-def make_literature_dict(feed):
+def make_literature_dict(feed: list) -> dict:
     """
-
+    filter publications from an RSS feed having an abstract, parse html abstract as plane string
     Args:
-        feed:
+        feed: list of RSS feed items
 
-    Returns:
+    Returns: dictionary of processed publications
 
     """
 
@@ -197,16 +210,14 @@ def make_literature_dict(feed):
     return dict_publications
 
 
-def read_rss_and_tweet(feed):
+def read_rss_and_tweet() -> None:
     """
 
-    Args:
-        feed:
-
-    Returns:
+    Read RSS objects and tweet one calling the post thread function
+    Returns: None, updates log file with the posted article id
 
     """
-    dict_publications = make_literature_dict(feed)
+    dict_publications = make_literature_dict(Settings.combined_feed)
 
     with open(Settings.posted_urls_output_file, "r") as jsonFile:
         article_log = json.load(jsonFile)
@@ -230,8 +241,15 @@ def read_rss_and_tweet(feed):
         write_to_logfile(article_log, Settings.posted_urls_output_file)
 
 
-def json_add_new_friend(user_id):
-    """add user friends to the interactions json file"""
+def json_add_new_friend(user_id: str) -> None:
+    """
+    add user friends to the interactions json file
+    Args:
+        user_id: user id to add to the interactions file
+
+    Returns: None, updates interaction file
+
+    """
 
     with open(Settings.users_json_file, "r") as json_file:
         users_dic = json.load(json_file)
@@ -244,13 +262,14 @@ def json_add_new_friend(user_id):
         json.dump(users_dic, json_file, indent=4)
 
 
-def post_tweet(message: str):
-    """Post tweet message to account.
+def post_tweet(message: str) -> None:
+    """
+    Post tweet message to account.
+    Args:
+        message: Message to post on Twitter
 
-    Parameters
-    ----------
-    message: str
-        Message to post on Twitter.
+    Returns: None
+
     """
     try:
         twitter_api = twitter_setup()
@@ -260,8 +279,7 @@ def post_tweet(message: str):
         logger.error(e)
 
 
-def filter_repeated_tweets(result_search, flag):
-
+def filter_repeated_tweets(result_search: list, flag: str) -> list:
     """
 
     Args:
@@ -291,7 +309,7 @@ def filter_repeated_tweets(result_search, flag):
     return [unique_results[x] for x in unique_results]
 
 
-def json_add_user(user_id):
+def json_add_user(user_id: str) -> None:
     """
     add user to the interactions json file
     Args:
@@ -325,9 +343,15 @@ def get_query() -> str:
     return include + " " + exclude
 
 
-def check_interactions(tweet):
+def check_interactions(tweet: tweepy.Status) -> None:
     """
-    check if previously interacted witht a user"""
+    check if previously interacted with a user
+    Args:
+        tweet:
+
+    Returns:
+
+    """
 
     if tweet.author.screen_name.lower() == "drugscibot":
         pass  # don't fav your self
@@ -353,9 +377,21 @@ def check_interactions(tweet):
             return False
 
 
-def try_retweet(twitter_api, tweet_text, in_tweet_id, self_followers):
-    """try to retweet, if already retweeted try next fom the list
-    of recent tweets"""
+def try_retweet(
+    twitter_api: tweepy.API, tweet_text: str, in_tweet_id: str, self_followers: list
+) -> None:
+    """
+    try to retweet, if already retweeted try next fom the list
+    of recent tweets
+    Args:
+        twitter_api:
+        tweet_text:
+        in_tweet_id:
+        self_followers:
+
+    Returns:
+
+    """
 
     tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers)
 
@@ -396,17 +432,33 @@ def try_retweet(twitter_api, tweet_text, in_tweet_id, self_followers):
         )
 
 
-def get_longest_text(status):
+def get_longest_text(status: tweepy.Status) -> str:
+    """
+    Get the text of a quoted status
+    Args:
+        status: tweepy.Status object
+
+    Returns: text of the quoted tweet
+
+    """
     if hasattr(status, "retweeted_status"):
         return status.retweeted_status.full_text
     else:
         return status.full_text
 
 
-def find_simple_users(twitter_api, tweet_id, followers_list):
-
+def find_simple_users(
+    twitter_api: tweepy.API, tweet_id: str, followers_list: list
+) -> int:
     """
-    retweet from normal users retweeting something interesting
+    retweet/fav from users retweeting something interesting
+    Args:
+        twitter_api:
+        tweet_id:
+        followers_list:
+
+    Returns: id of the retweeted/faved tweet
+
     """
     # get original retweeter:
     down_lev_tweet = twitter_api.get_status(tweet_id)
@@ -468,10 +520,19 @@ def find_simple_users(twitter_api, tweet_id, followers_list):
         return tweet_id
 
 
-def filter_tweet(search_results, twitter_api, flag):
+def filter_tweet(search_results: list, twitter_api):
     """
+
     function to ensure that retweets are on-topic
     by the hashtag list
+
+    Args:
+        search_results:
+        twitter_api:
+        flag:
+
+    Returns:
+
     """
     filtered_search_results = []
 
@@ -529,7 +590,16 @@ def filter_tweet(search_results, twitter_api, flag):
 
 
 def try_give_love(twitter_api, in_tweet_id, self_followers):
-    """try to favorite a post from simple users"""
+    """
+    try to favorite a post from simple users
+    Args:
+        twitter_api:
+        in_tweet_id:
+        self_followers:
+
+    Returns:
+
+    """
     # todo add flag to use sleep or fav immediately
 
     tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers)
@@ -567,14 +637,20 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
 
 
 def fav_or_tweet(max_val, flag, twitter_api):
+    """
+
+    use a tweet or a fav function depending on the flag called
+    Args:
+        max_val:
+        flag:
+        twitter_api:
+
+    Returns:
+
+    """
 
     self_followers = get_followers_list()
-
     count = 0
-
-    """
-    use a tweet or a fav function depending on the flag called
-    """
 
     while count < len(max_val):
 
@@ -609,9 +685,9 @@ def search_and_retweet(flag: str = "global_search", count: int = 40):
 
     Args:
         flag: A query to search for on Twitter. it can be `global_search` to search globally
-        or `list_search` reduced to a list defined on mylist_id
+              or `list_search` reduced to a list defined on mylist_id
         count: Number of tweets to search for. You should probably keep this low
-        when you use search_and_retweet() on a schedule (e.g. cronjob)
+               when you use search_and_retweet() on a schedule (e.g. cronjob)
 
     Returns: None
 
@@ -620,15 +696,15 @@ def search_and_retweet(flag: str = "global_search", count: int = 40):
     try:
         twitter_api = twitter_setup()
         if flag == "global_search":
-            ## search results retweets globally forgiven keywords
+            # search results retweets globally forgiven keywords
             search_results = twitter_api.search(
                 q=get_query(), count=count, tweet_mode="extended"
-            )  ## standard search results
+            )  # standard search results
         elif flag == "list_search":
-            ## search list retwwets most commented ad rt from the experts lists
+            # search list retwwets most commented ad rt from the experts lists
             search_results = twitter_api.list_timeline(
                 list_id=Settings.mylist_id, count=count, tweet_mode="extended"
-            )  ## list to tweet from
+            )  # list to tweet from
 
         else:
             search_results = twitter_api.list_timeline(
@@ -640,17 +716,15 @@ def search_and_retweet(flag: str = "global_search", count: int = 40):
         telegram_bot_sendtext(f"ERROR : {e.reason}")
         return
 
-    ## get the most faved + rtweeted and retweet it
-    max_val = filter_tweet(
-        filter_repeated_tweets(search_results, flag), twitter_api, flag
-    )
+    # get the most faved + rtweeted and retweet it
+    max_val = filter_tweet(filter_repeated_tweets(search_results, flag), twitter_api)
 
     fav_or_tweet(max_val, flag, twitter_api)
 
 
-def retweet(tweet):
+def retweet(tweet: tweepy.Status):
     """
-    re-tweet self last tweetet message.
+    re-tweet self last tweeted message.
     Args:
         tweet: tweet object
 
@@ -708,7 +782,7 @@ def display_help():
     """
     Show available commands.
 
-    Returns:
+    Returns: Prints available commands
 
     """
 
@@ -725,6 +799,4 @@ def display_help():
 
 
 if __name__ == "__main__":
-
     main()
-

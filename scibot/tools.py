@@ -164,7 +164,9 @@ class SafeScheduler(Scheduler):
 
     def __init__(self, reschedule_on_failure=True):
         """
-        If reschedule_on_failure is True, jobs will be rescheduled for their
+
+        Args:
+            reschedule_on_failure: if is True, jobs will be rescheduled for their
         next run as if they had completed successfully. If False, they'll run
         on the next run_pending() tick.
         """
@@ -183,25 +185,29 @@ class SafeScheduler(Scheduler):
 
 
 def shorten_text(text: str, maxlength: int) -> str:
-    """Truncate text and append three dots (...) at the end if length exceeds
+    """
+    Truncate text and append three dots (...) at the end if length exceeds
     maxlength chars.
 
-    Parameters
-    ----------
-    text: str
-        The text you want to shorten.
-    maxlength: int
-        The maximum character length of the text string.
+    Args:
+        text: The to shorten.
+        maxlength: The maximum character length of the text string.
 
-    Returns
-    -------
-    str
-        Returns a shortened text string.
+    Returns: Shortened text string.
+
     """
     return (text[:maxlength] + "...") if len(text) > maxlength else text
 
 
-def insert_hashtag(title: str):
+def insert_hashtag(title: str) -> str:
+    """
+    Add hashtag on title for keywords found on Settings.add_hashtag
+    Args:
+        title: Text to parse for inserting hash symbols
+
+    Returns: Text with inserted hashtags
+
+    """
 
     for x in Settings.add_hashtag:
         if re.search(fr"\b{x}", title.lower()):
@@ -214,18 +220,16 @@ def insert_hashtag(title: str):
 
 
 def compose_message(item: feedparser.FeedParserDict) -> str:
-    """Compose a tweet from an RSS item (title, link, description)
+    """
+    Compose a tweet from an RSS item (title, link, description)
     and return final tweet message.
 
-    Parameters
-    ----------
-    item: feedparser.FeedParserDict
-        An RSS item.
+    Args:
+        item: feedparser.FeedParserDict
+        An RSS item
 
-    Returns
-    -------
-    str
-        Returns a message suited for a Twitter status update.
+    Returns: mMssage suited for a Twitter status update.
+
     """
     title = insert_hashtag(item["title"])
 
@@ -234,19 +238,15 @@ def compose_message(item: feedparser.FeedParserDict) -> str:
 
 
 def is_in_logfile(content: str, filename: str) -> bool:
-    """Does the content exist on any line in the log file?
+    """
+    Does the content exist on any line in the log file?
 
-    Parameters
-    ----------
-    content: str
-        Content to search file for.
-    filename: str
-        Full path to file to search.
+    Args:
+        content: Content to search file for.
+        filename: Full path to file to search.
 
-    Returns
-    -------
-    bool
-        Returns `True` if content is found in file, otherwise `False`.
+    Returns: `True` if content is found in file, otherwise `False`.
+
     """
     if os.path.isfile(filename):
         with open(filename, "r") as jsonFile:
@@ -256,15 +256,16 @@ def is_in_logfile(content: str, filename: str) -> bool:
     return False
 
 
-def write_to_logfile(content: dict, filename: str):
-    """Append content to json file.
+def write_to_logfile(content: dict, filename: str) -> None:
+    """
+    Append content to json file.
 
-    Parameters
-    ----------
-    content: dic
-        Content to append to file.
-    filename: str
-        Full path to file that should be appended.
+    Args:
+        content: Content to append to file
+        filename: Full path to file that should be appended.
+
+    Returns: None
+
     """
     try:
         with open(filename, "w") as fp:
@@ -273,31 +274,12 @@ def write_to_logfile(content: dict, filename: str):
         logger.exception(e)
 
 
-def shorten_text(text: str, maxlength: int) -> str:
-    """Truncate text and append three dots (...) at the end if length exceeds
-    maxlength chars.
-
-    Parameters
-    ----------
-    text: str
-        The text you want to shorten.
-    maxlength: int
-        The maximum character length of the text string.
-
-    Returns
-    -------
-    str
-        Returns a shortened text string.
-    """
-    return (text[:maxlength] + "...") if len(text) > maxlength else text
-
-
 def scheduled_job(read_rss_and_tweet, retweet_own, search_and_retweet):
     schedule = SafeScheduler()
     # job 1
-    schedule.every().day.at("22:20").do(read_rss_and_tweet, url=Settings.combined_feed)
-    schedule.every().day.at("06:20").do(read_rss_and_tweet, url=Settings.combined_feed)
-    schedule.every().day.at("14:20").do(read_rss_and_tweet, url=Settings.combined_feed)
+    schedule.every().day.at("22:20").do(read_rss_and_tweet)
+    schedule.every().day.at("06:20").do(read_rss_and_tweet)
+    schedule.every().day.at("14:20").do(read_rss_and_tweet)
     # job 2
     schedule.every().day.at("01:10").do(retweet_own)
     schedule.every().day.at("09:10").do(retweet_own)
