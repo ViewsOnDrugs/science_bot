@@ -1,12 +1,16 @@
 
 
-# .<img src="https://pbs.twimg.com/profile_images/1389586842576637953/N9w-KzF0_400x400.png" alt="drawing" width="50"/> [DrugSciBot](https://twitter.com/drugSciBot/) <img src="https://pbs.twimg.com/profile_images/1389587065956884480/flZk4xVe_400x400.png" alt="drawing" width="50"/>
+# [<img src="https://pbs.twimg.com/profile_images/1389586842576637953/N9w-KzF0_400x400.png" alt="drawing" width="50"/>DrugSciBot<img src="https://pbs.twimg.com/profile_images/1389587065956884480/flZk4xVe_400x400.png" alt="drawing" width="50"/>](https://twitter.com/drugSciBot/)
 
-A bot application made with `tweepy` tweeting scientific articles from an RSS feed and retweeting educated opinions from a manually curated distribution list.
+A bot application sharing scientific publications and educated opinions on psychedelic research, harm reduction and drug policy issues. A collaboration with: [#mybrainmychoice](https://mybrainmychoice.de/)
+
+[<img src="https://mybrainmychoice.de/wp-content/uploads/mybrainmychoice_Logo-500x500_GIF.gif" alt="drawing" width="50"/>](https://mybrainmychoice.de/)
+
 
 ## What it does:
 
-* Reads and parses a list of RSS feeds. Tweets an article's title, link, abstract, and authors as a 5/5 :thread:.
+* Reads and parses a list of RSS feeds (i.e. PubMed)
+ Tweets an article's title, link, abstract, and authors as a 5/5 thread :thread:.
 * Retweets older RSS post after a given time.
 * Retweets the most retweeted and up-voted post from:
   - a global search for specified keywords or hashtags defined on `Settings.add_hashtag`.
@@ -72,7 +76,4 @@ to do that just run:
 $ scibot sch
 ```
 
-Take a look at an [example bot](https://twitter.com/drugSciBot) providing scientific facts and educated opinions on psychedelic research and drug policy issues.
-
 :hibiscus:
-
