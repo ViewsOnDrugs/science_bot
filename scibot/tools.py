@@ -40,7 +40,6 @@ class Settings:
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1HM5Uxfu7f2DxEmuq-aqm79Um6H97z55gW-utYd5e1Fq1Yngod/?limit=50&utm_campaign=pubmed-2&fc=20210420053153",
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1NSu_CQNBizlmYqaPvjt8_hPOGlOnPaTChO-SFWN36pp7ZkgSs/?limit=50&utm_campaign=pubmed-2&fc=20210420053222",
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1DK1DQN9MQ-BeubNAzIyke3Nq-hO8OkCvOE2oueFRGqqvy8gei/?limit=50&utm_campaign=pubmed-2&fc=20210420053342",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1DK1DQN9MQ-BeubNAzIyke3Nq-hO8OkCvOE2oueFRGqqvy8gei/?limit=50&utm_campaign=pubmed-2&fc=20210420053342",
         "http://export.arxiv.org/api/query?search_query=all:psilocybin*&start=0&max_results=100&sortBy=lastUpdatedDate&sortOrder=descending",
     ]
 

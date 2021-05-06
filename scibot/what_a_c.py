@@ -222,6 +222,7 @@ def read_rss_and_tweet() -> None:
     with open(Settings.posted_urls_output_file, "r") as jsonFile:
         article_log = json.load(jsonFile)
 
+    print(len(article_log))
     for article in dict_publications:
 
         if not is_in_logfile(article, Settings.posted_urls_output_file):
@@ -231,14 +232,14 @@ def read_rss_and_tweet() -> None:
                     "tweet_id": post_thread(dict_publications[article], 270),
                 }
 
+                write_to_logfile(article_log, Settings.posted_urls_output_file)
             except tweepy.TweepError as e:
 
                 print(e, dict_publications[article]["title"])
+                write_to_logfile(article_log, Settings.posted_urls_output_file)
                 continue
 
             break
-
-        write_to_logfile(article_log, Settings.posted_urls_output_file)
 
 
 def json_add_new_friend(user_id: str) -> None:
