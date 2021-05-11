@@ -153,7 +153,7 @@ def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
     """
     api = twitter_setup()
     original_tweet = api.update_status(status=compose_message(dict_one_pub))
-    telegram_bot_sendtext(f"Posting thread:, twitter.com/i/status/{original_tweet.id}")
+    telegram_bot_sendtext(f"Posting thread:, twitter.com/drugscibot/status/{original_tweet.id}")
 
     text = dict_one_pub["abstract"]
 
@@ -222,7 +222,6 @@ def read_rss_and_tweet() -> None:
     with open(Settings.posted_urls_output_file, "r") as jsonFile:
         article_log = json.load(jsonFile)
 
-    print(len(article_log))
     for article in dict_publications:
 
         if not is_in_logfile(article, Settings.posted_urls_output_file):
@@ -235,7 +234,6 @@ def read_rss_and_tweet() -> None:
                 write_to_logfile(article_log, Settings.posted_urls_output_file)
             except tweepy.TweepError as e:
 
-                print(e, dict_publications[article]["title"])
                 write_to_logfile(article_log, Settings.posted_urls_output_file)
                 continue
 
@@ -583,9 +581,7 @@ def filter_tweet(search_results: list, twitter_api):
                     )
                 else:
                     logger.info(f">> skipped, {keyword_matches}, {end_status}")
-                    telegram_bot_sendtext(
-                        f"[not considered] id={status.id_str}: {status.full_text}"
-                    )
+
 
     return sorted(filtered_search_results)
 
@@ -736,15 +732,16 @@ def retweet(tweet: tweepy.Status):
     try:
         twitter_api = twitter_setup()
 
-        if not tweet.retweeted:
+        if not hasattr(tweet, 'retweeted'):
+            print(tweet)
             twitter_api.retweet(id=tweet.id)
             logger.info(f"retweeted: twitter.com/i/status/{tweet.id}")
-            telegram_bot_sendtext(f"Self retweeted: twitter.com/i/status/{tweet.id}")
+            telegram_bot_sendtext(f"Self retweeted: twitter.com/drugscibot/status/{tweet.id}")
 
         else:
             twitter_api.unretweet(tweet.id)
             twitter_api.retweet(tweet.id)
-            telegram_bot_sendtext(f"Self re-retweeted: twitter.com/i/status/{tweet.id}")
+            telegram_bot_sendtext(f"Self re-retweeted: twitter.com/drugscibot/status/{tweet.id}")
 
     except tweepy.TweepError as e:
         logger.exception(e)
@@ -765,13 +762,11 @@ def retweet_old_own():
 
     min_val = min(article_log[x]["count"] for x in article_log)
 
-    for art in list(article_log)[::-1]:
-        print(article_log[art]["tweet_id"])
-        tweet = twitter_api.statuses_lookup([article_log[art]["tweet_id"]])[0]
+    for art in sorted(list(article_log), key=None, reverse=False):
+        tweet = twitter_api.statuses_lookup([article_log[art]["tweet_id"]])
         if tweet and article_log[art]["count"] <= min_val:
-            retweet(tweet)
+            retweet(tweet[0])
             article_log[art]["count"] += 1
-            article_log[art]["rt"] = True
 
             break
 
