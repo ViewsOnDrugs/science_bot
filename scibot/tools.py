@@ -36,11 +36,10 @@ class Settings:
     IGNORE_ERRORS = [327, 139]
     # RSS feeds to read and post tweets from.
     feed_urls = [
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1VePQbT36PBuW-0vYWywv3PuF6BRnl6iwoIY8Ud6bo2ad7LQCq/?limit=50&utm_campaign=pubmed-2&fc=20210420053033",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1HM5Uxfu7f2DxEmuq-aqm79Um6H97z55gW-utYd5e1Fq1Yngod/?limit=50&utm_campaign=pubmed-2&fc=20210420053153",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1NSu_CQNBizlmYqaPvjt8_hPOGlOnPaTChO-SFWN36pp7ZkgSs/?limit=50&utm_campaign=pubmed-2&fc=20210420053222",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1DK1DQN9MQ-BeubNAzIyke3Nq-hO8OkCvOE2oueFRGqqvy8gei/?limit=50&utm_campaign=pubmed-2&fc=20210420053342",
-        "http://export.arxiv.org/api/query?search_query=all:psilocybin*&start=0&max_results=100&sortBy=lastUpdatedDate&sortOrder=descending",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1ZGxMH1ktXCFn5mIeUkvIfOkRa7o7gTqNbl35-RTs7ogzkMQtY/?limit=100&utm_campaign=pubmed-2&fc=20210510224137",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1XSES1Yl3kEgnfOg6EStNFyWMogtYXic2VVXS8rpsyNHTjv1HK/?limit=100&utm_campaign=pubmed-2&fc=20210510224301",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1jAe3RzQKmf7SOUEM-Dt7QQtMWNG2UffuIIo_GGKHPfoKqhY9f/?limit=100&utm_campaign=pubmed-2&fc=20210510224348",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1bCr63ThlO22Eg5TxBaIQ5mzH02TqtmtM1QIkqa66iqK4SsMJm/?limit=100&utm_campaign=pubmed-2&fc=20210510224551",
     ]
 
     pre_combined_feed = [feedparser.parse(url)["entries"] for url in feed_urls]
