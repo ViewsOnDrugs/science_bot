@@ -157,7 +157,7 @@ def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
 
     text = dict_one_pub["abstract"]
     max_len =  round(len(text)/3)
-    if max_len < 250:
+    if max_len < 240:
         maxlength = max_len
 
 
@@ -231,16 +231,15 @@ def read_rss_and_tweet() -> None:
             try:
                 article_log[article] = {
                     "count": 1,
-                    "tweet_id": post_thread(dict_publications[article], 270),
+                    "tweet_id": post_thread(dict_publications[article], 240),
                 }
 
                 write_to_logfile(article_log, Settings.posted_urls_output_file)
+                break
             except tweepy.TweepError as e:
-
+                logger.error(f"RSS error, possible duplicate {e}, {article}")
                 write_to_logfile(article_log, Settings.posted_urls_output_file)
                 continue
-
-            break
 
 
 def json_add_new_friend(user_id: str) -> None:
