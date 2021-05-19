@@ -156,6 +156,10 @@ def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
     telegram_bot_sendtext(f"Posting thread:, twitter.com/drugscibot/status/{original_tweet.id}")
 
     text = dict_one_pub["abstract"]
+    max_len =  round(len(text)/3)
+    if max_len < 250:
+        maxlength = max_len
+
 
     for index in range(0, len(text), maxlength):
         if count < 4:
@@ -193,11 +197,10 @@ def make_literature_dict(feed: list) -> dict:
     dict_publications = {}
 
     for item in feed:
-        if hasattr(item, "content"):
+        if hasattr(item, "content") and not 'No abstract' in item.description:
             dict_publications[item.id] = {
                 "title": item.title,
-                "abstract": "Abstract: "
-                + BeautifulSoup(item.content[0].value, "html.parser")
+                "abstract": BeautifulSoup(item.content[0].value, "html.parser")
                 .get_text()
                 .split("ABSTRACT")[1],
                 "link": item.link,

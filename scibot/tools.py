@@ -40,6 +40,7 @@ class Settings:
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1XSES1Yl3kEgnfOg6EStNFyWMogtYXic2VVXS8rpsyNHTjv1HK/?limit=100&utm_campaign=pubmed-2&fc=20210510224301",
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1jAe3RzQKmf7SOUEM-Dt7QQtMWNG2UffuIIo_GGKHPfoKqhY9f/?limit=100&utm_campaign=pubmed-2&fc=20210510224348",
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1bCr63ThlO22Eg5TxBaIQ5mzH02TqtmtM1QIkqa66iqK4SsMJm/?limit=100&utm_campaign=pubmed-2&fc=20210510224551",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1hEma6JdH30sOOO0DiTP1jZh-6ZgoypoEsw_B9tXZejk_E8QuX/?limit=100&utm_campaign=pubmed-2&fc=20210510230918",
     ]
 
     pre_combined_feed = [feedparser.parse(url)["entries"] for url in feed_urls]
