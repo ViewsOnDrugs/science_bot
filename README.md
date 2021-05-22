@@ -1,5 +1,5 @@
 
-# [<img src="https://pbs.twimg.com/profile_images/1389586842576637953/N9w-KzF0_400x400.png" alt="drawing" width="50"/>DrugSciBot<img src="https://pbs.twimg.com/profile_images/1389586842576637953/N9w-KzF0_400x400.png" alt="drawing" width="50"/>](https://twitter.com/drugSciBot/)
+# [<img src="https://pbs.twimg.com/profile_images/1396102254487384065/ZjD8GvMw_400x400.png" alt="drawing" width="50"/>DrugSciBot<img src="https://pbs.twimg.com/media/E1_0586WQAYCNym?format=png&name=small" alt="drawing" width="50"/>](https://twitter.com/drugSciBot/)
 
 A bot application sharing scientific publications and educated opinions on psychedelic research, harm reduction and drug policy issues. A collaboration with: [#mybrainmychoice](https://mybrainmychoice.de/)
 
