@@ -149,7 +149,7 @@ class Settings:
     ]
 
     # list of the distribution
-    mylist_id = "1306244304000749569"
+    mylist_id = "1396081589768138755"
 
 
 class SafeScheduler(Scheduler):
