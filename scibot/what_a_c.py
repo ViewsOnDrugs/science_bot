@@ -762,13 +762,16 @@ def retweet_old_own():
     with open(Settings.posted_urls_output_file, "r") as jsonFile:
         article_log = json.load(jsonFile)
 
+    article_log_reversed = {article_log[x]['tweet_id']:{**article_log[x], **{'id':x}} for x in article_log}
+
+
     min_val = min(article_log[x]["count"] for x in article_log)
 
-    for art in sorted(list(article_log), key=None, reverse=False):
-        tweet = twitter_api.statuses_lookup([article_log[art]["tweet_id"]])
-        if tweet and article_log[art]["count"] <= min_val:
+    for art in sorted(list(article_log_reversed), key=None, reverse=False):
+        tweet = twitter_api.statuses_lookup([article_log_reversed[art]["tweet_id"]])
+        if tweet and article_log_reversed[art]["count"] <= min_val:
             retweet(tweet[0])
-            article_log[art]["count"] += 1
+            article_log[article_log_reversed[art]['id']]["count"] += 1
 
             break
 
