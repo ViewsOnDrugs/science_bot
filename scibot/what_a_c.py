@@ -354,7 +354,7 @@ def check_interactions(tweet: tweepy.Status) -> None:
 
     """
 
-    if tweet.author.screen_name.lower() == "drugscibot":
+    if tweet.author.screen_name.lower() == "viewsondrugsbot":
         pass  # don't fav your self
 
     auth_id = tweet.author.id_str
@@ -606,7 +606,7 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
     if not is_in_logfile(in_tweet_id, Settings.faved_tweets_output_file):
 
         try:
-            time.sleep(randint(0, 600))
+            time.sleep(randint(0, 250))
             twitter_api.create_favorite(id=tweet_id)
             write_to_logfile({in_tweet_id: {}}, Settings.faved_tweets_output_file)
             _status = twitter_api.get_status(tweet_id)

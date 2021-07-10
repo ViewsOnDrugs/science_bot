@@ -78,6 +78,7 @@ class Settings:
         "safeconsumption",
         "harmreduction",
         "druguse",
+        "droga",
         "safesuply",
         "safersuply",
     ]
@@ -108,6 +109,8 @@ class Settings:
         "drug-policy",
         "drugspolicy",
         "mdma",
+        "drug checking",
+        "drugchecking",
         "drugpolicy",
         "drug policy",
         "ayahuasca",
@@ -121,16 +124,13 @@ class Settings:
         "methadone",
     ]  # trip
 
-    # do not retweet if search result includes only any of this keywords alone
+    # do not retweet if search results include only a single of these keywords
     watch_add_hashtag = [
-        "cocaina",
-        "cocaine",
         "alzheimer",
         "depression",
         "anxiety",
-        "droga",
-        "coca",
         "dmt",
+        "droga",
         "lsd",
         "therapy",
         "psychiatry",
@@ -139,7 +139,6 @@ class Settings:
         "mental health",
         "clinical trial",
         "consciousness",
-        "drug",
         "meta-analysis",
         "dopamine",
         "serotonin",
@@ -149,7 +148,7 @@ class Settings:
     ]
 
     # list of the distribution
-    mylist_id = "1396081589768138755"
+    mylist_id = "1306244304000749569"
 
 
 class SafeScheduler(Scheduler):
@@ -284,14 +283,14 @@ def scheduled_job(read_rss_and_tweet, retweet_own, search_and_retweet):
     schedule.every().day.at("09:10").do(retweet_own)
     schedule.every().day.at("17:10").do(retweet_own)
     # job 3
-    schedule.every().day.at("00:20").do(search_and_retweet, "global_search")
-    schedule.every().day.at("03:20").do(search_and_retweet, "global_search")
-    schedule.every().day.at("06:20").do(search_and_retweet, "global_search")
-    schedule.every().day.at("09:20").do(search_and_retweet, "global_search")
-    schedule.every().day.at("12:20").do(search_and_retweet, "global_search")
-    schedule.every().day.at("15:20").do(search_and_retweet, "global_search")
-    schedule.every().day.at("18:20").do(search_and_retweet, "global_search")
-    schedule.every().day.at("21:20").do(search_and_retweet, "global_search")
+    schedule.every().day.at("00:20").do(search_and_retweet, "list_search")
+    schedule.every().day.at("03:20").do(search_and_retweet, "list_search")
+    schedule.every().day.at("06:20").do(search_and_retweet, "list_search")
+    schedule.every().day.at("09:20").do(search_and_retweet, "list_search")
+    schedule.every().day.at("12:20").do(search_and_retweet, "list_search")
+    schedule.every().day.at("15:20").do(search_and_retweet, "list_search")
+    schedule.every().day.at("18:20").do(search_and_retweet, "list_search")
+    schedule.every().day.at("21:20").do(search_and_retweet, "list_search")
 
     schedule.every().day.at("01:25").do(search_and_retweet, "list_search")
     schedule.every().day.at("04:25").do(search_and_retweet, "list_search")
@@ -302,7 +301,7 @@ def scheduled_job(read_rss_and_tweet, retweet_own, search_and_retweet):
     schedule.every().day.at("19:25").do(search_and_retweet, "list_search")
     schedule.every().day.at("22:25").do(search_and_retweet, "list_search")
     # job love
-    schedule.every(30).minutes.do(search_and_retweet, "give_love")
+    schedule.every(5).minutes.do(search_and_retweet, "give_love")
 
     while 1:
         schedule.run_pending()
