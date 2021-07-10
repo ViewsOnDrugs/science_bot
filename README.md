@@ -1,7 +1,7 @@
 
 # [<img src="https://pbs.twimg.com/profile_images/1396102254487384065/ZjD8GvMw_400x400.png" alt="drawing" width="50"/>ViewsOnDrugsBot<img src="https://pbs.twimg.com/media/E1_0586WQAYCNym?format=png&name=small" alt="drawing" width="50"/>](https://twitter.com/ViewsOnDrugsBot/)
 
-A bot application sharing scientific publications and educated opinions on psychedelic research, harm reduction and drug policy issues. A collaboration with: [#mybrainmychoice](https://mybrainmychoice.de/)
+A bot application sharing scientific publications and educated opinions on psychedelic research, harm reduction and drug policy issues. A collaboration with: [#mybrainmychoice](https://mybrainmychoice.de/twitter-bot/)
 
 [<img src="https://mybrainmychoice.de/wp-content/uploads/mybrainmychoice_Logo-500x500_GIF.gif" alt="drawing" width="50"/>](https://mybrainmychoice.de/)
 
