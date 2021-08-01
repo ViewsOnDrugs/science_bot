@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import re
 import time
 from os.path import expanduser
 from random import randint
@@ -183,6 +184,14 @@ def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
 
     return original_tweet.id
 
+def return_doi_str(article):
+    """return doi link if exists"""
+    title_search = re.search('(DOI:<a href=")(.*)(">)', str(article))
+    if title_search:
+        return title_search.group(2)
+    else:
+        return article.link
+
 
 def make_literature_dict(feed: list) -> dict:
     """
@@ -203,7 +212,7 @@ def make_literature_dict(feed: list) -> dict:
                 "abstract": BeautifulSoup(item.content[0].value, "html.parser")
                 .get_text()
                 .split("ABSTRACT")[1],
-                "link": item.link,
+                "link": return_doi_str(item),
                 "description": item.description,
                 "author-s": [
                     "Authors: " + ", ".join([x["name"] for x in item.authors]),
