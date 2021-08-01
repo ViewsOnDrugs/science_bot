@@ -225,7 +225,7 @@ def read_rss_and_tweet() -> None:
     with open(Settings.posted_urls_output_file, "r") as jsonFile:
         article_log = json.load(jsonFile)
 
-    for article in dict_publications:
+    for article in sorted(dict_publications.keys(), reverse=True):
 
         if not is_in_logfile(article, Settings.posted_urls_output_file):
             try:
