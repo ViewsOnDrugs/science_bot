@@ -555,9 +555,16 @@ def filter_tweet(search_results: list, twitter_api):
         )
 
         if status.is_quote_status:
-            quoted_tweet = twitter_api.get_status(
-                status.quoted_status_id_str, tweet_mode="extended"
-            )
+            try:
+                quoted_tweet = twitter_api.get_status(
+                    status.quoted_status_id_str, tweet_mode="extended"
+                )
+
+            except tweepy.TweepError as e:
+                telegram_bot_sendtext(f"ERROR {e}, {status.quoted_status_id_str}")
+                quoted_tweet = ""
+                continue
+
             end_status = get_longest_text(status) + get_longest_text(quoted_tweet)
         else:
             end_status = get_longest_text(status)
@@ -687,7 +694,7 @@ def fav_or_tweet(max_val, flag, twitter_api):
             continue
 
 
-def search_and_retweet(flag: str = "global_search", count: int = 40):
+def search_and_retweet(flag: str = "global_search", count: int = 100):
     """
     Search for a query in tweets, and retweet those tweets.
 
