@@ -561,7 +561,7 @@ def filter_tweet(search_results: list, twitter_api):
                 )
 
             except tweepy.TweepError as e:
-                telegram_bot_sendtext(f"ERROR {e}, {status.quoted_status_id_str}")
+                telegram_bot_sendtext(f"ERROR {e}, twitter.com/anyuser/status/{status.id_str}")
                 quoted_tweet = ""
                 continue
 
