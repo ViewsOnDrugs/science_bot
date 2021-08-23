@@ -24,7 +24,7 @@ from scibot.tools import (
 )
 
 env_path = expanduser("~/.env2")
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=env_path, override=True)
 
 
 def main():
