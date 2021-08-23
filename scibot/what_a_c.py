@@ -23,7 +23,7 @@ from scibot.tools import (
     scheduled_job,
 )
 
-env_path = expanduser("~/.env")
+env_path = expanduser("~/.env2")
 load_dotenv(dotenv_path=env_path)
 
 
@@ -233,6 +233,11 @@ def read_rss_and_tweet() -> None:
 
     with open(Settings.posted_urls_output_file, "r") as jsonFile:
         article_log = json.load(jsonFile)
+
+    if all(item in article_log.keys() for item in dict_publications.keys()):
+
+        telegram_bot_sendtext("rss empty trying older articles")
+        dict_publications = make_literature_dict(Settings.feed_older_literature)
 
     for article in sorted(dict_publications.keys(), reverse=True):
 

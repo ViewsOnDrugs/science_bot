@@ -42,6 +42,8 @@ class Settings:
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1bCr63ThlO22Eg5TxBaIQ5mzH02TqtmtM1QIkqa66iqK4SsMJm/?limit=100&utm_campaign=pubmed-2&fc=20210510224551",
         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1hEma6JdH30sOOO0DiTP1jZh-6ZgoypoEsw_B9tXZejk_E8QuX/?limit=100&utm_campaign=pubmed-2&fc=20210510230918",
     ]
+    # rss best results no time harm reduction and psychedelics
+    feed_older_literature = feedparser.parse("https://pubmed.ncbi.nlm.nih.gov/rss/search/1vkCYaq0ZPJtG__yAIHi0ToO4fH5QjhQ-c4o9iBppoh6MXIEbo/?limit=200&utm_campaign=pubmed-2&fc=20210823150810")["entries"]
 
     pre_combined_feed = [feedparser.parse(url)["entries"] for url in feed_urls]
 
