@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3.6
 import json
 import os
 import sys
@@ -6,11 +6,11 @@ import re
 import time
 from os.path import expanduser
 from random import randint
-
+import calendar
 import tweepy
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-
+from scibot.streamer import listen_stream_and_rt
 from scibot.telebot import telegram_bot_sendtext
 from scibot.tools import (
     logger,
@@ -23,7 +23,7 @@ from scibot.tools import (
     scheduled_job,
 )
 
-env_path = expanduser("~/.env2")
+env_path = expanduser("~/.env")
 load_dotenv(dotenv_path=env_path, override=True)
 
 
@@ -52,6 +52,8 @@ def main():
 
             if sys.argv[1].lower() == "rss":
                 read_rss_and_tweet()
+            elif sys.argv[1].lower() == "str":
+                listen_stream_and_rt(['#ConstellationsFest', '#ConstellationFest'])
             elif sys.argv[1].lower() == "rtg":
                 search_and_retweet("global_search")
             elif sys.argv[1].lower() == "glv":
@@ -61,15 +63,17 @@ def main():
             elif sys.argv[1].lower() == "rto":
                 retweet_old_own()
             elif sys.argv[1].lower() == "sch":
+                listen_stream_and_rt(['#ConstellationsFest', '#ConstellationFest'])
                 scheduled_job(read_rss_and_tweet, retweet_old_own, search_and_retweet)
+
 
         except Exception as e:
             logger.exception(e, exc_info=True)
             telegram_bot_sendtext(f"[Exception] {e}")
 
         except IOError as errno:
-            logger.exception(f"[ERROR] {errno}")
-            telegram_bot_sendtext(f"[ERROR] {errno}")
+            logger.exception(f"[ERROR] IOError {errno}")
+            telegram_bot_sendtext(f"[ERROR] IOError {errno}")
 
     else:
         display_help()
@@ -178,7 +182,7 @@ def post_thread(dict_one_pub: dict, maxlength: int, count: int = 1) -> int:
 
     time.sleep(2)
     count += 1
-    last_msg = shorten_text(dict_one_pub["author-s"][0], 250) + f" {count}/{count}"
+    last_msg = shorten_text(dict_one_pub["pub_date"] + " " + dict_one_pub["author-s"], 250) + f" {count}/{count}"
 
     update_thread(last_msg, reply3_tweet, api)
 
@@ -207,6 +211,9 @@ def make_literature_dict(feed: list) -> dict:
 
     for item in feed:
         if hasattr(item, "content") and not 'No abstract' in item.description:
+
+            authors_list = [x["name"] for x in item.authors]
+
             dict_publications[item.id] = {
                 "title": item.title,
                 "abstract": BeautifulSoup(item.content[0].value, "html.parser")
@@ -214,10 +221,9 @@ def make_literature_dict(feed: list) -> dict:
                 .split("ABSTRACT")[1],
                 "link": return_doi_str(item),
                 "description": item.description,
-                "author-s": [
-                    "Authors: " + ", ".join([x["name"] for x in item.authors]),
-                    "Author: " + item.author,
-                ],
+                "pub_date": f"Date: {calendar.month_name[item.published_parsed.tm_mon]} {item.published_parsed.tm_year}",
+                "author-s": f"Authors:  {', '.join(authors_list)}" if len(authors_list) >1 else  f"Author:  {', '.join(authors_list)}",
+
             }
     return dict_publications
 
@@ -647,9 +653,11 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
                 write_to_logfile({in_tweet_id: {}}, Settings.faved_tweets_output_file)
                 logger.debug(f"throw a en error {e}")
                 logger.exception(e)
+                telegram_bot_sendtext(f"{e}")
                 return False
             else:
                 logger.error(e)
+                telegram_bot_sendtext(f"{e}")
                 return True
 
     else:
@@ -712,7 +720,6 @@ def search_and_retweet(flag: str = "global_search", count: int = 100):
     Returns: None
 
     """
-
     try:
         twitter_api = twitter_setup()
         if flag == "global_search":
@@ -726,19 +733,23 @@ def search_and_retweet(flag: str = "global_search", count: int = 100):
                 list_id=Settings.mylist_id, count=count, tweet_mode="extended"
             )  # list to tweet from
 
-        else:
+
+        elif flag == "give_love":
             search_results = twitter_api.list_timeline(
                 list_id=Settings.mylist_id, count=count, tweet_mode="extended"
-            ) + twitter_api.search(q=get_query(), count=count, tweet_mode="extended")
+            ) + twitter_api.list_timeline(
+                list_id=1396081589768138755, count=count, tweet_mode="extended"
+            )
 
     except tweepy.TweepError as e:
         logger.exception(e.reason)
-        telegram_bot_sendtext(f"ERROR : {e.reason}")
+        telegram_bot_sendtext(f"ERROR: {e}, {search_results[0]}")
         return
+    except Exception as e:
+         telegram_bot_sendtext(f"ERROR: {e}")
 
     # get the most faved + rtweeted and retweet it
     max_val = filter_tweet(filter_repeated_tweets(search_results, flag), twitter_api)
-
     fav_or_tweet(max_val, flag, twitter_api)
 
 
@@ -768,7 +779,7 @@ def retweet(tweet: tweepy.Status):
 
     except tweepy.TweepError as e:
         logger.exception(e)
-        telegram_bot_sendtext(f"ERROR :{e}")
+        telegram_bot_sendtext(f"ERROR:{e}")
 
 
 def retweet_old_own():
