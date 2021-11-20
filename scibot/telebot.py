@@ -1,3 +1,4 @@
+#!/usr/bin/python3.6
 import requests
 import os
 from os.path import expanduser
