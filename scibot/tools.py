@@ -1,3 +1,4 @@
+#!/usr/bin/python3.6
 import logging
 import json
 import re
@@ -8,6 +9,7 @@ import feedparser
 import dateutil.parser
 from os.path import expanduser
 from scibot.telebot import telegram_bot_sendtext
+from scibot.streamer import listen_stream_and_rt
 from schedule import Scheduler
 
 # logging parameters
@@ -36,14 +38,14 @@ class Settings:
     IGNORE_ERRORS = [327, 139]
     # RSS feeds to read and post tweets from.
     feed_urls = [
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1ZGxMH1ktXCFn5mIeUkvIfOkRa7o7gTqNbl35-RTs7ogzkMQtY/?limit=100&utm_campaign=pubmed-2&fc=20210510224137",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1XSES1Yl3kEgnfOg6EStNFyWMogtYXic2VVXS8rpsyNHTjv1HK/?limit=100&utm_campaign=pubmed-2&fc=20210510224301",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1jAe3RzQKmf7SOUEM-Dt7QQtMWNG2UffuIIo_GGKHPfoKqhY9f/?limit=100&utm_campaign=pubmed-2&fc=20210510224348",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1bCr63ThlO22Eg5TxBaIQ5mzH02TqtmtM1QIkqa66iqK4SsMJm/?limit=100&utm_campaign=pubmed-2&fc=20210510224551",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1hEma6JdH30sOOO0DiTP1jZh-6ZgoypoEsw_B9tXZejk_E8QuX/?limit=100&utm_campaign=pubmed-2&fc=20210510230918",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1X9MO_201KJGQLdG05NdxtaqKjTZuIPIGlgpiDZr31QjkgZUbj/?limit=300&utm_campaign=pubmed-2&fc=20210922175019",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1XSES1Yl3kEgnfOg6EStNFyWMogtYXic2VVXS8rpsyNHTjv1HK/?limit=200&utm_campaign=pubmed-2&fc=20210510224301",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1jAe3RzQKmf7SOUEM-Dt7QQtMWNG2UffuIIo_GGKHPfoKqhY9f/?limit=200&utm_campaign=pubmed-2&fc=20210510224348",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1bCr63ThlO22Eg5TxBaIQ5mzH02TqtmtM1QIkqa66iqK4SsMJm/?limit=200&utm_campaign=pubmed-2&fc=20210510224551",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1hEma6JdH30sOOO0DiTP1jZh-6ZgoypoEsw_B9tXZejk_E8QuX/?limit=200&utm_campaign=pubmed-2&fc=20210510230918",
     ]
     # rss best results no time harm reduction and psychedelics
-    feed_older_literature = feedparser.parse("https://pubmed.ncbi.nlm.nih.gov/rss/search/1vkCYaq0ZPJtG__yAIHi0ToO4fH5QjhQ-c4o9iBppoh6MXIEbo/?limit=200&utm_campaign=pubmed-2&fc=20210823150810")["entries"]
+    feed_older_literature = feedparser.parse("https://pubmed.ncbi.nlm.nih.gov/rss/search/1h_Yu2rLTrK0AIYDN2V5HLWSksLTr4a6SUZjZzoAPcf-Qk0gCJ/?limit=200&utm_campaign=pubmed-2&fc=20210901021150")["entries"]
 
     pre_combined_feed = [feedparser.parse(url)["entries"] for url in feed_urls]
 
@@ -107,6 +109,7 @@ class Settings:
         "nicotine",
         "smoke",
         "smoking",
+        "constellationsfest",# to be deleted after the festival
         "zigaretten",
     ]
 
@@ -147,6 +150,7 @@ class Settings:
         "mentalhealth",
         "trip",
         "regula",
+        "regular",
         "mental health",
         "clinical trial",
         "consciousness",
@@ -284,6 +288,9 @@ def write_to_logfile(content: dict, filename: str) -> None:
 
 
 def scheduled_job(read_rss_and_tweet, retweet_own, search_and_retweet):
+
+    # listen_stream_and_rt('#INSIGHT2021')
+
     schedule = SafeScheduler()
     # job 1
     schedule.every().day.at("22:20").do(read_rss_and_tweet)
