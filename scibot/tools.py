@@ -38,11 +38,8 @@ class Settings:
     IGNORE_ERRORS = [327, 139]
     # RSS feeds to read and post tweets from.
     feed_urls = [
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1X9MO_201KJGQLdG05NdxtaqKjTZuIPIGlgpiDZr31QjkgZUbj/?limit=300&utm_campaign=pubmed-2&fc=20210922175019",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1XSES1Yl3kEgnfOg6EStNFyWMogtYXic2VVXS8rpsyNHTjv1HK/?limit=200&utm_campaign=pubmed-2&fc=20210510224301",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1jAe3RzQKmf7SOUEM-Dt7QQtMWNG2UffuIIo_GGKHPfoKqhY9f/?limit=200&utm_campaign=pubmed-2&fc=20210510224348",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1bCr63ThlO22Eg5TxBaIQ5mzH02TqtmtM1QIkqa66iqK4SsMJm/?limit=200&utm_campaign=pubmed-2&fc=20210510224551",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1hEma6JdH30sOOO0DiTP1jZh-6ZgoypoEsw_B9tXZejk_E8QuX/?limit=200&utm_campaign=pubmed-2&fc=20210510230918",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1fK6RBI2YOGGyUGq7migZaHPIPPF2wwzrP6bSMc2UVsBcAAs1k/?limit=200&utm_campaign=pubmed-2&fc=20220104171413",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1tih1KzP2IVyzwtg4Wj6oAaYcoZBKaTLdW6Uy2hasBEQi7fg3c/?limit=200&utm_campaign=pubmed-2&fc=20220104171852",
     ]
     # rss best results no time harm reduction and psychedelics
     feed_older_literature = feedparser.parse("https://pubmed.ncbi.nlm.nih.gov/rss/search/1h_Yu2rLTrK0AIYDN2V5HLWSksLTr4a6SUZjZzoAPcf-Qk0gCJ/?limit=200&utm_campaign=pubmed-2&fc=20210901021150")["entries"]

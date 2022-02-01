@@ -41,7 +41,7 @@ class MyStreamListener(tweepy.StreamListener):
         else:
             try:
                 ## catch nesting
-                if status.user.screen_name in banned_profiles or status.in_reply_to_screen_name:
+                if status.user.screen_name.lower() in banned_profiles or status.in_reply_to_screen_name.lower() in banned_profiles :
                     pass
                 replied_to=status.in_reply_to_screen_name
                 answer_user=status.user.screen_name
