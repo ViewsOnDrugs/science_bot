@@ -6,6 +6,7 @@ import re
 import time
 from os.path import expanduser
 from random import randint
+import random
 import calendar
 import tweepy
 from bs4 import BeautifulSoup
@@ -414,7 +415,7 @@ def try_retweet(
 
     """
 
-    tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers)
+    tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers, schicksal=True)
 
     if not is_in_logfile(in_tweet_id, Settings.posted_retweets_output_file):
         try:
@@ -469,7 +470,7 @@ def get_longest_text(status: tweepy.Status) -> str:
 
 
 def find_simple_users(
-    twitter_api: tweepy.API, tweet_id: str, followers_list: list
+    twitter_api: tweepy.API, tweet_id: str, followers_list: list, schicksal=False
 ) -> int:
     """
     retweet/fav from users retweeting something interesting
@@ -519,7 +520,7 @@ def find_simple_users(
             future_friends.append(
                 (future_friends_dic["followers"], retweet.id_str, future_friends_dic)
             )
-    if future_friends:
+    if future_friends and not schicksal:
         try:  # give prioroty to non followers of self
             min_friend = min(
                 [x for x in future_friends if x[2]["id_str"] not in followers_list]
@@ -535,10 +536,12 @@ def find_simple_users(
             )
             return min_friend[1]
     else:
+
+        random_rt = random.choice(retweeters).id_str
         logger.info(
-            f"try retweeting from original post: https://twitter.com/i/status/{tweet_id}"
+            f"try retweeting from original post: https://twitter.com/i/status/{random_rt}"
         )
-        return tweet_id
+        return random_rt
 
 
 def filter_tweet(search_results: list, twitter_api):
@@ -628,7 +631,7 @@ def try_give_love(twitter_api, in_tweet_id, self_followers):
     """
     # todo add flag to use sleep or fav immediately
 
-    tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers)
+    tweet_id = find_simple_users(twitter_api, in_tweet_id, self_followers, schicksal=True)
 
     if not is_in_logfile(in_tweet_id, Settings.faved_tweets_output_file):
 
