@@ -53,8 +53,9 @@ def main():
 
             if sys.argv[1].lower() == "rss":
                 read_rss_and_tweet()
-            elif sys.argv[1].lower() == "str":
-                listen_stream_and_rt(['#ConstellationsFest', '#ConstellationFest'])
+           
+           #elif sys.argv[1].lower() == "str":
+                #listen_stream_and_rt(['#ConstellationsFest', '#ConstellationFest'])
             elif sys.argv[1].lower() == "rtg":
                 search_and_retweet("global_search")
             elif sys.argv[1].lower() == "glv":
@@ -64,7 +65,7 @@ def main():
             elif sys.argv[1].lower() == "rto":
                 retweet_old_own()
             elif sys.argv[1].lower() == "sch":
-                listen_stream_and_rt(['#ConstellationsFest', '#ConstellationFest'])
+                #listen_stream_and_rt(['#ConstellationsFest', '#ConstellationFest'])
                 scheduled_job(read_rss_and_tweet, retweet_old_own, search_and_retweet)
 
 
