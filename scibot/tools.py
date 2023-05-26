@@ -38,11 +38,11 @@ class Settings:
     IGNORE_ERRORS = [327, 139]
     # RSS feeds to read and post tweets from.
     feed_urls = [
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1fK6RBI2YOGGyUGq7migZaHPIPPF2wwzrP6bSMc2UVsBcAAs1k/?limit=250&utm_campaign=pubmed-2&fc=20220104171413",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1tih1KzP2IVyzwtg4Wj6oAaYcoZBKaTLdW6Uy2hasBEQi7fg3c/?limit=250&utm_campaign=pubmed-2&fc=20220104171852",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1fK6RBI2YOGGyUGq7migZaHPIPPF2wwzrP6bSMc2UVsBcAAs1k/?limit=350&utm_campaign=pubmed-2&fc=20220104171413",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1tih1KzP2IVyzwtg4Wj6oAaYcoZBKaTLdW6Uy2hasBEQi7fg3c/?limit=350&utm_campaign=pubmed-2&fc=20220104171852",
     ]
     # rss best results no time harm reduction and psychedelics
-    feed_older_literature = feedparser.parse("https://pubmed.ncbi.nlm.nih.gov/rss/search/1h_Yu2rLTrK0AIYDN2V5HLWSksLTr4a6SUZjZzoAPcf-Qk0gCJ/?limit=250&utm_campaign=pubmed-2&fc=20210901021150")["entries"]
+    feed_older_literature = feedparser.parse("https://pubmed.ncbi.nlm.nih.gov/rss/search/1h_Yu2rLTrK0AIYDN2V5HLWSksLTr4a6SUZjZzoAPcf-Qk0gCJ/?limit=350&utm_campaign=pubmed-2&fc=20210901021150")["entries"]
 
     pre_combined_feed = [feedparser.parse(url)["entries"] for url in feed_urls]
 
